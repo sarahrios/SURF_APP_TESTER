@@ -116,7 +116,7 @@ def upload_e_testar(
         
         # Remove APKs antigos para evitar confusão
         for f in os.listdir(storage_dir):
-            if f.endswith(".apk") or f.endswith(".zip"):
+            if f.endswith(".apk") or f.endswith(".zip") or f.endswith(".ipa") or f.endswith(".app"):
                 try: os.remove(os.path.join(storage_dir, f))
                 except: pass
                 
@@ -146,8 +146,14 @@ def upload_e_testar(
         latest_results["current_stage"] = "SAST_RUNNING"
         
         resultado_codigo = {"falhas_encontradas": []}
-        if caminho_apk:
+        
+        # Verifica se é iOS para pular análise estática do Androguard
+        is_ios = caminho_apk and (caminho_apk.endswith(".ipa") or caminho_apk.endswith(".app"))
+        
+        if caminho_apk and not is_ios:
             resultado_codigo = ApkAnalyzer.analisar_codigo(caminho_apk)
+        elif is_ios:
+            print("ℹ️ Análise estática (SAST) ignorada para iOS (Androguard suporta apenas Android).")
 
         # Extrai falhas do código para somar no Quality Gate
         # Junta falhas do APK (Engenharia Reversa) + Falhas do ZIP (Código Fonte)
@@ -172,6 +178,7 @@ def upload_e_testar(
 
         if caminho_apk:
             os.environ["TARGET_APK_PATH"] = os.path.abspath(caminho_apk)
+            os.environ["PLATFORM_NAME"] = "iOS" if is_ios else "Android"
             
             # Tenta rodar testes mobile reais (Appium) primeiro
             caminho_testes = "tests_mobile"
@@ -179,12 +186,22 @@ def upload_e_testar(
 
             print(f"Tentando executar testes em: {caminho_testes}")
             try:
+                # Configuração do Appium (Local ou Remoto/Mac)
+                appium_url = os.getenv("APPIUM_SERVER_URL", "http://localhost:4723")
+                from urllib.parse import urlparse
+                parsed = urlparse(appium_url)
+                host = parsed.hostname or "localhost"
+                port = parsed.port or 4723
+
                 # Verifica se o Appium está rodando antes de tentar testar
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(2.0) # Aumentado timeout para evitar falsos negativos
                 if sock.connect_ex(('localhost', 4723)) != 0:
+                sock.settimeout(2.0) 
+                if sock.connect_ex((host, port)) != 0:
                     sock.close()
                     raise Exception("Servidor Appium não detectado na porta 4723.")
+                    raise Exception(f"Servidor Appium não detectado em {host}:{port}")
                 sock.close()
 
                 # Rodamos o TestRunner
@@ -399,12 +416,30 @@ if __name__ == "__main__":
 
     if not android_home:
         # Tenta localizar automaticamente no caminho padrão do Windows
+        # Tenta localizar automaticamente (Windows e Mac/Linux)
         local_app_data = os.environ.get("LOCALAPPDATA", "")
         default_sdk = os.path.join(local_app_data, "Android", "Sdk")
+        home_dir = os.environ.get("HOME", "")
         
         if local_app_data and os.path.exists(default_sdk):
+        possible_sdks = [
+            os.path.join(local_app_data, "Android", "Sdk"),          # Windows
+            os.path.join(home_dir, "Library", "Android", "sdk"),     # macOS
+            os.path.join(home_dir, "Android", "Sdk")                 # Linux
+        ]
+        
+        default_sdk = ""
+        for path in possible_sdks:
+            if path and os.path.exists(path):
+                default_sdk = path
+                break
+        
+        if default_sdk:
             print(f"\n⚠️  AVISO: SDK do Android encontrado em '{default_sdk}', mas a variável de ambiente ANDROID_HOME não está definida.")
             print(f"   👉 Para habilitar testes em celular, execute no terminal e reinicie: $env:ANDROID_HOME = \"{default_sdk}\"\n")
+            # Mensagem de configuração adaptada para o SO
+            cmd_export = f'$env:ANDROID_HOME = "{default_sdk}"' if os.name == 'nt' else f'export ANDROID_HOME="{default_sdk}"'
+            print(f"   👉 Para habilitar testes em celular, execute no terminal e reinicie: {cmd_export}\n")
             sdk_root_path = default_sdk
         else:
             print("\n⚠️  AVISO: Ambiente Android (SDK) não detectado.")
