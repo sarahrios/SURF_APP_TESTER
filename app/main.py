@@ -193,15 +193,18 @@ def upload_e_testar(
                 host = parsed.hostname or "localhost"
                 port = parsed.port or 4723
 
-                # Verifica se o Appium está rodando antes de tentar testar
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(2.0) # Aumentado timeout para evitar falsos negativos
-                if sock.connect_ex(('localhost', 4723)) != 0:
-                sock.settimeout(2.0) 
-                if sock.connect_ex((host, port)) != 0:
+                sock.settimeout(2.0)
+                
+                # Fallback para evitar erro de IPv6 (::1) no Windows
+                check_host = "127.0.0.1" if host == "localhost" else host
+                if sock.connect_ex((check_host, port)) != 0:
                     sock.close()
-                    raise Exception("Servidor Appium não detectado na porta 4723.")
-                    raise Exception(f"Servidor Appium não detectado em {host}:{port}")
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(2.0)
+                    if sock.connect_ex((host, port)) != 0:
+                        sock.close()
+                        raise Exception(f"Appium não detectado em {host}:{port}. O Appium está rodando?")
                 sock.close()
 
                 # Rodamos o TestRunner
@@ -209,12 +212,7 @@ def upload_e_testar(
                 
                 # Se não retornou nada ou zero testes, assume falha de conexão com Appium
                 if not resultados_testes or resultados_testes.get('total_testes', 0) == 0:
-                    raise Exception("Falha de conexão com Appium ou nenhum teste encontrado.")
-                    
-                # Se rodou mas TUDO falhou (0 aprovados), assume erro de ambiente (ex: Appium travado)
-                # e força o fallback para Simulação para o usuário ver o fluxo funcionar.
-                if resultados_testes.get('aprovados', 0) == 0:
-                    raise Exception("Todos os testes mobile falharam (provável erro de conexão).")
+                    raise Exception("PyTest falhou ao rodar o Appium (Verifique os logs no terminal).")
                     
             except Exception as e:
                 print(f"⚠️ Ambiente mobile indisponível: {e}")
@@ -415,13 +413,10 @@ if __name__ == "__main__":
     sdk_root_path = ""
 
     if not android_home:
-        # Tenta localizar automaticamente no caminho padrão do Windows
         # Tenta localizar automaticamente (Windows e Mac/Linux)
         local_app_data = os.environ.get("LOCALAPPDATA", "")
-        default_sdk = os.path.join(local_app_data, "Android", "Sdk")
         home_dir = os.environ.get("HOME", "")
         
-        if local_app_data and os.path.exists(default_sdk):
         possible_sdks = [
             os.path.join(local_app_data, "Android", "Sdk"),          # Windows
             os.path.join(home_dir, "Library", "Android", "sdk"),     # macOS
@@ -478,4 +473,4 @@ if __name__ == "__main__":
     print("🚀 Iniciando Surf App Tester Platform...")
     print("📱 Front-end disponível em: http://localhost:8000")
     print("📚 API docs disponível em: http://localhost:8000/docs")
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)
