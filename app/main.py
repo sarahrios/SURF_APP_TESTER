@@ -107,20 +107,20 @@ async def get_historico():
 
 @app.post("/executar-teste-apk")
 def upload_e_testar(
-    arquivo: UploadFile = File(None),
-    codigo: UploadFile = File(None),
+    apk_surf: UploadFile = File(None),
+    apk_pagtel: UploadFile = File(None),
     fase: str = Form("E2E")
 ):
     """
     Endpoint principal que realiza o ciclo completo:
-    1. Upload do APK
+    1. Upload do APK (Surf ou Pagtel)
     2. Análise Estática de Código (Segurança)
     3. Testes Dinâmicos (Simulação)
     4. Quality Gate (Aprovação/Reprovação)
     5. Geração de PDF
     """
-    if not arquivo and not codigo:
-        return JSONResponse(status_code=400, content={"message": "Nenhum arquivo enviado. Envie um APK ou Código Fonte."})
+    if not apk_surf and not apk_pagtel:
+        return JSONResponse(status_code=400, content={"message": "Nenhum arquivo enviado. Envie um APK Surf ou APK Pagtel."})
 
     global latest_results
     latest_results["analysis_in_progress"] = True
@@ -140,39 +140,36 @@ def upload_e_testar(
                 except: pass
                 
         caminho_apk = None
-        if arquivo:
-            caminho_apk = os.path.join("storage", arquivo.filename)
-            with open(caminho_apk, "wb") as buffer:
-                shutil.copyfileobj(arquivo.file, buffer)
-            print(f"APK recebido e salvo em: {caminho_apk}")
-        else:
-            print("Nenhum APK enviado. Pulando análise de binário.")
+        tipo_app = "SURF"
+        nome_arquivo_salvo = "Desconhecido"
         
-        # 1.1 SALVAR CÓDIGO FONTE (SE HOUVER)
-        resultado_source = {"falhas_encontradas": []}
-        if codigo:
-            caminho_codigo = os.path.join("storage", codigo.filename)
-            with open(caminho_codigo, "wb") as buffer:
-                shutil.copyfileobj(codigo.file, buffer)
-            print(f"Código fonte recebido e salvo em: {caminho_codigo}")
-            
-            # Executa análise do ZIP
-            print("Iniciando varredura do Código Fonte...")
-            resultado_source = ApkAnalyzer.analisar_source_code(caminho_codigo)
+        if apk_surf:
+            caminho_apk = os.path.join("storage", apk_surf.filename)
+            with open(caminho_apk, "wb") as buffer:
+                shutil.copyfileobj(apk_surf.file, buffer)
+            print(f"APK Surf recebido e salvo em: {caminho_apk}")
+            tipo_app = "SURF"
+            nome_arquivo_salvo = apk_surf.filename
+        elif apk_pagtel:
+            caminho_apk = os.path.join("storage", apk_pagtel.filename)
+            with open(caminho_apk, "wb") as buffer:
+                shutil.copyfileobj(apk_pagtel.file, buffer)
+            print(f"APK Pagtel recebido e salvo em: {caminho_apk}")
+            tipo_app = "PAGTEL"
+            nome_arquivo_salvo = apk_pagtel.filename
+        else:
+            print("Nenhum APK enviado. Pulando análise.")
 
         # --- NOVA ETAPA: ANÁLISE ESTÁTICA DO CÓDIGO (SAST) ---
-        print("Iniciando Análise de Código e Segurança...")
+        print("Iniciando Análise de Segurança...")
         latest_results["current_stage"] = "SAST_RUNNING"
         
         resultado_codigo = {"falhas_encontradas": []}
         if caminho_apk:
             resultado_codigo = ApkAnalyzer.analisar_codigo(caminho_apk)
 
-        # Extrai falhas do código para somar no Quality Gate
-        # Junta falhas do APK (Engenharia Reversa) + Falhas do ZIP (Código Fonte)
-        falhas_apk = resultado_codigo.get("falhas_encontradas", [])
-        falhas_source = resultado_source.get("falhas_encontradas", [])
-        falhas_codigo = falhas_apk + falhas_source
+        # Extrai falhas do APK para somar no Quality Gate
+        falhas_codigo = resultado_codigo.get("falhas_encontradas", [])
         
         s1_codigo = sum(1 for f in falhas_codigo if f['severidade'] == 'S1')
         s2_codigo = sum(1 for f in falhas_codigo if f['severidade'] == 'S2')
@@ -192,8 +189,13 @@ def upload_e_testar(
         if caminho_apk:
             os.environ["TARGET_APK_PATH"] = os.path.abspath(caminho_apk)
             
-            # Tenta rodar testes mobile reais (Appium) primeiro
-            caminho_testes = "tests_mobile"
+            # Define a pasta de testes baseado em qual APK foi upado
+            caminho_testes = "tests_mobile" if tipo_app == "SURF" else "tests_pagtel"
+            
+            # Se for PAGTEL, garante que a pasta existe para o Pytest não quebrar
+            if tipo_app == "PAGTEL":
+                os.makedirs(caminho_testes, exist_ok=True)
+                
             modo_execucao = "REAL_DEVICE"
 
             print(f"Tentando executar testes em: {caminho_testes}")
@@ -290,7 +292,7 @@ def upload_e_testar(
         }
 
         latest_results["last_analysis"] = {
-            "arquivo": arquivo.filename if arquivo else codigo.filename,
+            "arquivo": nome_arquivo_salvo,
             "analise_estatica": resultado_codigo,
             "analise_dinamica": resultados_testes,
             "status_final": "APROVADO" if aprovado else "REPROVADO",
@@ -311,14 +313,14 @@ def upload_e_testar(
         # Fase 3: Integração com Monday.com (Cria item automático se o App for REPROVADO)
         try:
             if not aprovado:
-                nome_arquivo = arquivo.filename if arquivo else (codigo.filename if codigo else "Aplicativo")
+                nome_arquivo = nome_arquivo_salvo
                 MondayService.criar_item_falha_critica(nome_arquivo, total_s1, resultados_testes.get("lista_falhas", []), pdf, todos_motivos)
         except Exception as e:
             print(f"⚠️ Aviso: Erro na integração do Monday: {e}")
 
         return {
-            "arquivo": arquivo.filename if arquivo else "Não fornecido",
-            "codigo_fonte": codigo.filename if codigo else "Não fornecido",
+            "arquivo": nome_arquivo_salvo,
+            "tipo_app": tipo_app,
             "analise_estatica": {
                 "debuggable": "Sim (FALHA)" if s1_codigo > 0 else "Não (OK)",
                 "falhas_identificadas": falhas_codigo
@@ -342,6 +344,55 @@ def upload_e_testar(
         )
     finally:
         latest_results["analysis_in_progress"] = False
+
+@app.post("/executar-teste-web")
+def executar_teste_web(url: str = Form(...)):
+    """
+    Endpoint que realiza testes automatizados em um site.
+    """
+    global latest_results
+    latest_results["analysis_in_progress"] = True
+    latest_results["current_stage"] = "WEB_TEST_RUNNING"
+    
+    try:
+        # 1. Define o caminho dos testes e cria a pasta se não existir
+        caminho_testes = "tests_web"
+        os.makedirs(caminho_testes, exist_ok=True)
+        
+        # 2. Passa a URL para o ambiente de teste
+        os.environ["TARGET_URL"] = url
+        
+        print(f"--- Iniciando testes web para a URL: {url} ---")
+        
+        # 3. Executa os testes
+        resultados_testes = TestRunner.executar_testes(caminho_testes)
+        
+        # 4. Avalia o resultado (simples, por enquanto)
+        aprovado = resultados_testes.get('falhas', 0) == 0
+        motivos = [f['mensagem'] for f in resultados_testes.get('lista_falhas', [])]
+        
+        # 5. Gera o relatório PDF
+        pdf = PDFReporter.gerar(resultados_testes, aprovado, motivos, fase="WEB")
+        
+        # 6. Retorna a resposta
+        return {
+            "url": url,
+            "resultados_testes": resultados_testes,
+            "status_final": "APROVADO" if aprovado else "REPROVADO",
+            "relatorio_pdf": f"{pdf}?t={int(time.time())}" if pdf else None
+        }
+        
+    except Exception as e:
+        import traceback
+        print(f"❌ ERRO FATAL NO TESTE WEB: {e}")
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500, 
+            content={"message": f"Erro interno durante o teste web: {str(e)}"}
+        )
+    finally:
+        latest_results["analysis_in_progress"] = False
+        latest_results["current_stage"] = "IDLE"
 
 # Rota alternativa compatível com o front-end
 @app.post("/api/upload-apk")

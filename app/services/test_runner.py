@@ -27,6 +27,7 @@ class TestRunner:
             pytest.main([
                 caminho_testes,
                 "-v",
+                "--capture=sys",
                 f"--junitxml={arquivo_xml}",
                 "-p", "no:warnings"
             ])

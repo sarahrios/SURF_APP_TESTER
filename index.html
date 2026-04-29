@@ -741,7 +741,7 @@
                     if (data.success) {
                         setLogs(prev => [...prev, { 
                             type: 'success', 
-                            text: `APK Surf enviado: ${file.name} (${data.size})`, 
+                            text: `APK enviado: ${file.name} (${data.size})`, 
                             time 
                         }]);
                     } else {
@@ -767,74 +767,9 @@
                 setCodeFileObj(file);
                 setLogs(prev => [...prev, { 
                     type: 'info', 
-                    text: `APK Pagtel selecionado: ${file.name}`, 
+                    text: `Código fonte selecionado: ${file.name}`, 
                     time: new Date().toLocaleTimeString('pt-BR', { hour12: false }) 
                 }]);
-            };
-
-            const handleRunWebAnalysis = async () => {
-                const url = document.getElementById('webUrlInput')?.value;
-                if (!url) {
-                    setLogs(prev => [...prev, {
-                        type: 'error',
-                        text: 'Por favor, insira uma URL para testar.',
-                        time: new Date().toLocaleTimeString('pt-BR', { hour12: false })
-                    }]);
-                    return;
-                }
-
-                setIsAnalyzing(true);
-                setPdfUrl(null);
-                setTestResults([]);
-                const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-
-                setLogs(prev => [...prev, {
-                    type: 'info',
-                    text: `Iniciando análise web para: ${url}`,
-                    time
-                }]);
-
-                // Reset and set analysis status
-                setAnalyses(prev => prev.map(a => ({
-                    ...a,
-                    status: a.name === 'Testes Mobile' ? 'analyzing' : 'pending',
-                    progress: a.name === 'Testes Mobile' ? 30 : 0,
-                    details: a.name === 'Testes Mobile' ? 'Executando testes web...' : 'Aguardando'
-                })));
-
-                try {
-                    const formData = new FormData();
-                    formData.append('url', url);
-
-                    const response = await fetch('/executar-teste-web', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const data = await response.json();
-                    const newTime = new Date().toLocaleTimeString('pt-BR', { hour12: false });
-
-                    setTestResults(data.resultados_testes?.lista_testes || []);
-
-                    setLogs(prev => [...prev, {
-                        type: data.status_final === 'APROVADO' ? 'success' : 'error',
-                        text: `Análise web finalizada: ${data.status_final}`,
-                        time: newTime
-                    }]);
-
-                    if (data.relatorio_pdf) {
-                        setPdfUrl(data.relatorio_pdf);
-                    }
-
-                } catch (error) {
-                    setLogs(prev => [...prev, {
-                        type: 'error',
-                        text: `Erro na análise web: ${error.message}`,
-                        time: new Date().toLocaleTimeString('pt-BR', { hour12: false })
-                    }]);
-                } finally {
-                    setIsAnalyzing(false);
-                }
             };
 
             const handleRunAnalysis = async () => {
@@ -842,7 +777,7 @@
                     const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
                     setLogs(prev => [...prev, {
                         type: 'error',
-                        text: 'Por favor, faça upload de um APK Surf ou APK Pagtel primeiro',
+                        text: 'Por favor, faça upload de um APK ou Código Fonte primeiro',
                         time
                     }]);
                     return;
@@ -869,8 +804,8 @@
 
                 try {
                     const formData = new FormData();
-                    if (fileObj) formData.append('apk_surf', fileObj);
-                    if (codeFileObj) formData.append('apk_pagtel', codeFileObj);
+                    if (fileObj) formData.append('arquivo', fileObj);
+                    if (codeFileObj) formData.append('codigo', codeFileObj);
                     
                     formData.append('fase', config.fase);
                     formData.append('forcar_simulacao', config.useSimulation);
@@ -1020,9 +955,6 @@
                                 <button className="btn btn-primary" onClick={handleRunAnalysis}>
                                     <span>▶️</span> Executar Análise
                                 </button>
-                                <button className="btn btn-primary" style={{background: 'linear-gradient(90deg, #4f46e5, #7c3aed)'}} onClick={handleRunWebAnalysis}>
-                                    <span>🌐</span> Testar Site
-                                </button>
                             </div>
                         </div>
                     </header>
@@ -1066,7 +998,7 @@
                             </div>
                         )}
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             <div>
                                 <input 
                                     type="file" 
@@ -1077,7 +1009,7 @@
                                 />
                                 <div className="upload-section" onClick={() => document.getElementById('fileInput').click()}>
                                     <div className="upload-icon">🏄‍♂️</div>
-                                    <h3>Pegue sua prancha (APK Surf)</h3>
+                                    <h3>Pegue sua Prancha (APK)</h3>
                                     <p>Arraste o arquivo para pegar essa onda de testes</p>
                                     {uploadedFile && (
                                         <div style={{ marginTop: '20px', animation: 'slideInUp 0.5s ease-out' }}>
@@ -1093,35 +1025,19 @@
                                 <input 
                                     type="file" 
                                     id="codeInput" 
-                                    accept=".apk" 
+                                    accept=".zip,.rar,.tar,.gz" 
                                     style={{ display: 'none' }} 
                                     onChange={handleCodeUpload}
                                 />
                                 <div className="upload-section" onClick={() => document.getElementById('codeInput').click()}>
                                     <div className="upload-icon">🌊</div>
-                                    <h3>Pegue sua prancha (APK Pagtel)</h3>
-                                    <p>Envie o arquivo .apk para análise no fundo do mar</p>
+                                    <h3>Upload do Código Fonte</h3>
+                                    <p>Envie o arquivo .zip para análise no fundo do mar</p>
                                     {uploadedCode && (
                                         <p style={{ marginTop: '10px', fontWeight: '600' }}>
                                             ✓ {uploadedCode}
                                         </p>
                                     )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <div className="upload-section">
-                                    <div className="upload-icon">🌐</div>
-                                    <h3>Site de Recarga Rapida</h3>
-                                    <p>Cole a URL para iniciar a varredura de UI</p>
-                                    <input 
-                                        type="url" 
-                                        id="webUrlInput"
-                                        style={{ width: '100%', padding: '10px', marginTop: '20px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px' }}
-                                        placeholder="https://www.exemplo.com"
-                                        onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
-                                        onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-                                    />
                                 </div>
                             </div>
                         </div>

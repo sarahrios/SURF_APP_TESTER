@@ -217,9 +217,9 @@ def test_02_login(driver):
         campos[1].send_keys("1234")        # Inserir Senha
         driver.hide_keyboard()
 
-        # Clicar em "Continuar"
-        btn_continuar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Continuar')]")
-        btn_continuar.click()
+        # Clicar em "Entrar"
+        btn_entrar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Entrar') or @text='ENTRAR']")
+        btn_entrar.click()
 
         time.sleep(10) # Aguarda processamento do login
         print("✅ Login realizado com sucesso.")
@@ -248,10 +248,17 @@ def test_04_selecao_numero(driver):
     """ETAPA 4: Seleção de Número"""
     print("DESC: ETAPA 4 - Seleção de Número.")
     try:
-        # Selecionar uma caixa com um número disponível
-        caixa = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((AppiumBy.CLASS_NAME, "android.widget.RadioButton"))
-        )
+        # Selecionar uma caixa com o número específico (19)92009-9246
+        try:
+            caixa = WebDriverWait(driver, 20).until(
+                EC.element_to_be_clickable((AppiumBy.XPATH, "//*[contains(@text, '92009-9246') or contains(@text, '(19)92009')]"))
+            )
+        except:
+            # Fallback: Se o texto exato não for achado, seleciona o primeiro rádio
+            print("⚠️ Número exato não encontrado. Tentando selecionar a primeira caixa disponível...")
+            caixa = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((AppiumBy.CLASS_NAME, "android.widget.RadioButton"))
+            )
         caixa.click()
         time.sleep(1)
 
@@ -286,9 +293,9 @@ def test_05_cadastro_cartao(driver):
 
         # Preencher os dados do cartão
         campos = driver.find_elements(AppiumBy.CLASS_NAME, "android.widget.EditText")
-        campos[0].send_keys("0000000000000000") # Número do cartão
-        campos[1].send_keys("0000")             # Validade
-        campos[2].send_keys("000")              # CVV
+        campos[0].send_keys("5162929078563882") # Número do cartão
+        campos[1].send_keys("0632")             # Validade
+        campos[2].send_keys("396")              # CVV
         if len(campos) > 3: campos[3].send_keys("Sarah Rios")  # Nome
         if len(campos) > 4: campos[4].send_keys("99999909914") # CPF
         driver.hide_keyboard()
@@ -363,10 +370,15 @@ def test_07_recarga_pix(driver):
         btn_recarga.click()
         time.sleep(3)
 
-        # Selecionar um plano
-        plano = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((AppiumBy.CLASS_NAME, "android.widget.RadioButton"))
-        )
+        # Selecionar PLANO 30
+        try:
+            plano = WebDriverWait(driver, 20).until(
+                EC.element_to_be_clickable((AppiumBy.XPATH, "//*[contains(@text, 'PLANO 30') or contains(@text, '30')]"))
+            )
+        except:
+            plano = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((AppiumBy.CLASS_NAME, "android.widget.RadioButton"))
+            )
         plano.click()
 
         # Clicar em "Confirmar"
@@ -380,8 +392,8 @@ def test_07_recarga_pix(driver):
         )
         btn_pix.click()
 
-        # Clicar em "Finalizar Recarga"
-        btn_finalizar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Finalizar Recarga')]")
+        # Clicar em "Finalizar recarga"
+        btn_finalizar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Finalizar') and contains(@text, 'ecarga')]")
         btn_finalizar.click()
         time.sleep(5)
 

@@ -5,3 +5,5 @@ androguard
 pytest
 reportlab
 Appium-Python-Client
+selenium
+Pillow

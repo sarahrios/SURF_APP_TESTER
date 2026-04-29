@@ -8,6 +8,11 @@ from datetime import datetime
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from xml.sax.saxutils import escape
 
+try:
+    from PIL import Image as PILImage
+except ImportError:
+    PILImage = None
+
 class PDFReporter:
     @staticmethod
     def _sanitize_html(text: str) -> str:
@@ -296,13 +301,27 @@ class PDFReporter:
             row = []
             for desc, img_path in evidencias:
                 try:
-                    img = Image(img_path, width=3.2*inch, height=5.5*inch, kind='proportional')
-                    cell = [img, Spacer(1, 5), Paragraph(f"<b>{escape(desc)}</b>", style_small)]
-                    row.append(cell)
-                    if len(row) == 2:
-                        grid_data.append(row)
-                        row = []
-                except Exception:
+                    is_landscape = False
+                    if PILImage:
+                        with PILImage.open(img_path) as pil_img:
+                            w, h = pil_img.size
+                            is_landscape = w > h
+
+                    if is_landscape:
+                        # Web screenshot: usa a largura toda
+                        img = Image(img_path, width=7.2*inch, height=4.05*inch, kind='proportional')
+                        cell = [img, Spacer(1, 5), Paragraph(f"<b>{escape(desc)}</b>", style_small)]
+                        grid_data.append([cell]) # Uma imagem por linha
+                    else:
+                        # Mobile screenshot: continua com duas colunas
+                        img = Image(img_path, width=3.2*inch, height=5.5*inch, kind='proportional')
+                        cell = [img, Spacer(1, 5), Paragraph(f"<b>{escape(desc)}</b>", style_small)]
+                        row.append(cell)
+                        if len(row) == 2:
+                            grid_data.append(row)
+                            row = []
+                except Exception as e:
+                    print(f"Erro ao processar imagem para PDF: {e}")
                     pass
             
             if row: # Se sobrou uma imagem ímpar
