@@ -8,6 +8,7 @@ from datetime import datetime
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_JUSTIFY
 from xml.sax.saxutils import escape
 
+
 try:
     from PIL import Image as PILImage
 except ImportError:
@@ -61,7 +62,7 @@ class PDFReporter:
         # =================================================================================
         story.append(Spacer(1, 2*inch))
         story.append(Paragraph("RELATÓRIO DE AUDITORIA DE QA", style_cover_title))
-        story.append(Paragraph("SURF APP TESTER PLATFORM", style_cover_sub))
+        story.append(Paragraph("SURF ASSURANCE LAB", style_cover_sub))
         story.append(Spacer(1, 1*inch))
         
         # Status Grande na Capa

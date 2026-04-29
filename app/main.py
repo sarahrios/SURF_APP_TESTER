@@ -15,7 +15,7 @@ from app.services.apk_analyzer import ApkAnalyzer
 from app.core.database import init_db, salvar_execucao, obter_historico
 from app.services.monday_service import MondayService
 
-app = FastAPI(title="PyQualityGate Platform")
+app = FastAPI(title="Surf Assurance Lab API")
 
 # Armazena os últimos resultados dos testes (em memória)
 latest_results = {
@@ -346,7 +346,7 @@ def upload_e_testar(
         latest_results["analysis_in_progress"] = False
 
 @app.post("/executar-teste-web")
-def executar_teste_web(url: str = Form(...)):
+def executar_teste_web(url: str = Form(...), tipo_teste: str = Form("RECARGA"), iccid: str = Form(None)):
     """
     Endpoint que realiza testes automatizados em um site.
     """
@@ -356,13 +356,17 @@ def executar_teste_web(url: str = Form(...)):
     
     try:
         # 1. Define o caminho dos testes e cria a pasta se não existir
-        caminho_testes = "tests_web"
+        caminho_testes = "tests_web" if tipo_teste == "RECARGA" else "tests_ativacao"
         os.makedirs(caminho_testes, exist_ok=True)
         
-        # 2. Passa a URL para o ambiente de teste
+        # 2. Passa as variáveis para o ambiente de teste
         os.environ["TARGET_URL"] = url
+        if iccid:
+            os.environ["TARGET_ICCID"] = iccid
         
-        print(f"--- Iniciando testes web para a URL: {url} ---")
+        print(f"--- Iniciando testes web ({tipo_teste}) para a URL: {url} ---")
+        if iccid:
+            print(f"--- ICCID a ser utilizado: {iccid} ---")
         
         # 3. Executa os testes
         resultados_testes = TestRunner.executar_testes(caminho_testes)
@@ -541,7 +545,7 @@ if __name__ == "__main__":
         elif has_platform_tools and has_build_tools:
             print("✅ Ambiente Android SDK parece configurado corretamente.\n")
 
-    print("🚀 Iniciando Surf App Tester Platform...")
+    print("🚀 Iniciando Surf Assurance Lab...")
     print("📱 Front-end disponível em: http://localhost:8000")
     print("📚 API docs disponível em: http://localhost:8000/docs")
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
