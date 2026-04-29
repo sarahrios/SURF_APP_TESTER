@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surf App Tester - Plataforma de Quality Gate</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #fdfbf7; /* Areia muito suave */
+            --bg-secondary: rgba(255, 255, 255, 0.95);
+            --bg-tertiary: #f0f9ff;
+            --bg-card: #ffffff;
+            --accent-primary: #00838f; /* Azul Oceano Profundo */
+            --accent-secondary: #4dd0e1; /* Turquesa */
+            --accent-success: #10b981;
+            --accent-danger: #ef4444;
+            --accent-warning: #f59e0b;
+            --text-primary: #263238;
+            --text-secondary: #546e7a;
+            --text-muted: #94a3b8;
+            --border: #eceff1;
+            --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            background-image: linear-gradient(180deg, #e0f7fa 0%, #fff8e1 100%); /* Céu para Areia */
+            background-attachment: fixed;
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 20px 24px;
+            animation: slideInDown 0.5s ease-out;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 131, 143, 0.3);
+        }
+
+        .brand-text h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent-primary);
+            letter-spacing: -0.5px;
+            text-shadow: none;
+        }
+
+        .brand-text p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 50px; /* Pílula */
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 131, 143, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 131, 143, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px dashed #b0bec5;
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: slideInUp 0.5s ease-out;
+            color: var(--text-primary);
+        }
+
+        .upload-section:hover {
+            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.9);
+            border-color: var(--accent-secondary);
+            box-shadow: 0 10px 30px rgba(77, 208, 225, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 72px;
+            margin-bottom: 12px;
+            filter: none;
+        }
+
+        .upload-section h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--accent-primary);
+        }
+
+        .upload-section p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+            animation: slideInUp 0.5s ease-out 0.1s both;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: none;
+            border-radius: 20px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--accent-primary);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .stat-icon {
+            font-size: 28px;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: #dcfce7;
+            color: var(--accent-success);
+        }
+
+        .stat-trend.negative {
+            background: #fee2e2;
+            color: var(--accent-danger);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--accent-primary);
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* Two Column Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            animation: slideInUp 0.5s ease-out 0.2s both;
+        }
+
+        .section {
+            background: var(--bg-card);
+            border: none;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        /* Analysis Items */
+        .analysis-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .analysis-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(3px);
+            box-shadow: var(--shadow);
+        }
+
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .analysis-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .analysis-status {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: var(--accent-success);
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: var(--accent-danger);
+        }
+
+        .status-analyzing {
+            background: #fef3c7;
+            color: var(--accent-warning);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .analysis-details {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .service-tag {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .progress-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .metric-item {
+            background: linear-gradient(135deg, #ffffff 0%, #e0f7fa 100%);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 15px rgba(0, 131, 143, 0.08);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .metric-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 131, 143, 0.15);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--accent-primary);
+        }
+
+        /* Terminal */
+        .terminal {
+            background: #0f172a; /* Noite no mar */
+            border-radius: 16px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.7;
+            border: 1px solid #334155;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .terminal-line {
+            margin-bottom: 4px;
+            display: flex;
+            gap: 10px;
+            color: #94a3b8;
+        }
+
+        .terminal-timestamp {
+            color: #64748b;
+            min-width: 65px;
+        }
+
+        .terminal-content {
+            flex: 1;
+        }
+
+        .terminal-line.success .terminal-content {
+            color: #10b981;
+        }
+
+        .terminal-line.error .terminal-content {
+            color: #ef4444;
+        }
+
+        .terminal-line.warning .terminal-content {
+            color: #f59e0b;
+        }
+
+        .terminal-line.info .terminal-content {
+            color: #3b82f6;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-actions {
+                justify-content: space-between;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .upload-section {
+                padding: 30px 20px;
+            }
+
+            .status-badge {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            header {
+                padding: 16px;
+            }
+
+            .brand-text h1 {
+                font-size: 18px;
+            }
+
+            .btn {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+        }
+
+        /* Scrollbar */
+        .terminal::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .terminal::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        .terminal::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        .terminal::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [uploadedFile, setUploadedFile] = useState(null);
+            const [fileObj, setFileObj] = useState(null); // Armazena o objeto do arquivo
+            const [uploadedCode, setUploadedCode] = useState(null);
+            const [codeFileObj, setCodeFileObj] = useState(null);
+            const [pdfUrl, setPdfUrl] = useState(null);
+            const [showConfig, setShowConfig] = useState(false);
+            const [config, setConfig] = useState({ fase: 'E2E', useSimulation: true }); // Padrão true para evitar erros
+            const [testResults, setTestResults] = useState([]);
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
+            const [securityMetrics, setSecurityMetrics] = useState({
+                vulnerabilities: 0,
+                s1Defects: 0,
+                s2Defects: 0,
+                permissions: 0
+            });
+
+            const [analyses, setAnalyses] = useState([
+                {
+                    id: 1,
+                    name: 'Análise SAST',
+                    status: 'pending',
+                    progress: 0,
+                    details: 'Aguardando upload de APK para iniciar',
+                    service: 'apk_analyzer.py'
+                },
+                {
+                    id: 2,
+                    name: 'Testes Mobile',
+                    status: 'pending',
+                    progress: 0,
+                    details: 'Aguardando SAST para iniciar testes',
+                    service: 'test_runner.py'
+                },
+                {
+                    id: 3,
+                    name: 'Quality Gate',
+                    status: 'pending',
+                    progress: 0,
+                    details: 'Aguardando testes para avaliar critérios',
+                    service: 'quality_gate.py'
+                },
+            ]);
+
+            const [stats, setStats] = useState({
+                testsRun: 0,
+                passed: 0,
+                failed: 0,
+                coverage: 0
+            });
+
+            const [logs, setLogs] = useState([
+                { type: 'info', text: 'Plataforma inicializada', time: new Date().toLocaleTimeString('pt-BR', { hour12: false }) }
+            ]);
+
+            // Busca estatísticas do backend ao carregar
+            useEffect(() => {
+                const fetchStats = async () => {
+                    try {
+                        const response = await fetch('/api/stats');
+                        const data = await response.json();
+                        setStats(data);
+                    } catch (error) {
+                        console.error('Erro ao buscar stats:', error);
+                    }
+                };
+
+                const fetchLastAnalysis = async () => {
+                    try {
+                        const response = await fetch('/api/last-analysis');
+                        const data = await response.json();
+                        if (data.success && data.data) {
+                            const last = data.data;
+                            setSecurityMetrics({
+                                vulnerabilities: last.analise_estatica.falhas_identificadas.filter(f => f.severidade === 'S1').length,
+                                s1Defects: last.s1_total,
+                                s2Defects: last.s2_total,
+                                permissions: last.analise_estatica.falhas_identificadas.filter(f => f.tipo === 'PRIVACIDADE').length
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Erro ao buscar última análise:', error);
+                    }
+                };
+
+                fetchStats();
+                fetchLastAnalysis();
+            }, []);
+
+            const handleFileUpload = async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+
+                // Feedback imediato: Mostra o GIF assim que o arquivo é selecionado
+                setUploadedFile(file.name);
+                setFileObj(file);
+
+                const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+                
+                try {
+                    setLogs(prev => [...prev, { 
+                        type: 'info', 
+                        text: `Enviando ${file.name}...`, 
+                        time 
+                    }]);
+
+                    const formData = new FormData();
+                    formData.append('arquivo', file);
+
+                    const response = await fetch('/api/upload-apk', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        setLogs(prev => [...prev, { 
+                            type: 'success', 
+                            text: `APK enviado: ${file.name} (${data.size})`, 
+                            time 
+                        }]);
+                    } else {
+                        setLogs(prev => [...prev, { 
+                            type: 'error', 
+                            text: `Falha no envio: ${data.message}`, 
+                            time 
+                        }]);
+                    }
+                } catch (error) {
+                    setLogs(prev => [...prev, { 
+                        type: 'error', 
+                        text: `Erro: ${error.message}`, 
+                        time 
+                    }]);
+                }
+            };
+
+            const handleCodeUpload = (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                setUploadedCode(file.name);
+                setCodeFileObj(file);
+                setLogs(prev => [...prev, { 
+                    type: 'info', 
+                    text: `Código fonte selecionado: ${file.name}`, 
+                    time: new Date().toLocaleTimeString('pt-BR', { hour12: false }) 
+                }]);
+            };
+
+            const handleRunAnalysis = async () => {
+                if (!fileObj && !codeFileObj) {
+                    const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+                    setLogs(prev => [...prev, {
+                        type: 'error',
+                        text: 'Por favor, faça upload de um APK ou Código Fonte primeiro',
+                        time
+                    }]);
+                    return;
+                }
+
+                setIsAnalyzing(true);
+                setPdfUrl(null);
+                setTestResults([]);
+                const time = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+
+                // Inicia SAST Analysis
+                setAnalyses(prev => prev.map((a, idx) => ({
+                    ...a,
+                    status: idx === 0 ? 'analyzing' : 'pending',
+                    progress: idx === 0 ? 30 : 0,
+                    details: idx === 0 ? 'Executando análise de segurança...' : a.details
+                })));
+
+                setLogs(prev => [...prev, {
+                    type: 'info',
+                    text: 'Iniciando pipeline de análise...',
+                    time
+                }]);
+
+                try {
+                    const formData = new FormData();
+                    if (fileObj) formData.append('arquivo', fileObj);
+                    if (codeFileObj) formData.append('codigo', codeFileObj);
+                    
+                    formData.append('fase', config.fase);
+                    formData.append('forcar_simulacao', config.useSimulation);
+
+                    setLogs(prev => [...prev, {
+                        type: 'info',
+                        text: `Iniciando testes (Fase: ${config.fase})...`,
+                        time: new Date().toLocaleTimeString('pt-BR', { hour12: false })
+                    }]);
+
+                    // Inicia Polling de Status
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const fileName = fileObj ? fileObj.name : codeFileObj.name;
+                            const res = await fetch(`/api/analysis-status/${fileName}`);
+                            const statusData = await res.json();
+                            
+                            if (statusData.analyses) {
+                                setAnalyses(prev => prev.map((a, idx) => {
+                                    const update = statusData.analyses[idx];
+                                    return { ...a, status: update.status, progress: update.progress };
+                                }));
+                            }
+
+                            if (statusData.status === 'completed' || statusData.status === 'not_found') {
+                                clearInterval(pollInterval);
+                            }
+                        } catch (e) {
+                            console.error("Polling error", e);
+                        }
+                    }, 1000);
+
+                    const response = await fetch('/executar-teste-apk', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    clearInterval(pollInterval); // Garante parada do polling
+
+                    const data = await response.json();
+                    const newTime = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+
+                    // Atualiza estatísticas com valores reais
+                    const statsResponse = await fetch('/api/stats');
+                    const statsData = await statsResponse.json();
+                    setStats(statsData);
+
+                    // Atualiza lista detalhada de testes
+                    setTestResults(data.analise_dinamica?.lista_testes || []);
+
+                    // Log do modo de execução
+                    if (data.modo_execucao) {
+                        setLogs(prev => [...prev, {
+                            type: data.modo_execucao === 'REAL_DEVICE' ? 'success' : 'warning',
+                            text: `Modo de Execução: ${data.modo_execucao}`,
+                            time: newTime
+                        }]);
+                    }
+
+                    // Atualiza métricas de segurança
+                    const falhas = data.analise_estatica?.falhas_identificadas || [];
+                    const s1Count = falhas.filter(f => f.severidade === 'S1').length;
+                    const s2Count = falhas.filter(f => f.severidade === 'S2').length;
+
+                    setSecurityMetrics({
+                        vulnerabilities: s1Count,
+                        s1Defects: data.analise_dinamica?.defeitos_s1 || 0,
+                        s2Defects: data.analise_dinamica?.defeitos_s2 || 0,
+                        permissions: falhas.filter(f => f.tipo === 'PRIVACIDADE').length
+                    });
+
+                    // Log das falhas encontradas
+                    if (falhas.length > 0) {
+                        falhas.forEach(falha => {
+                            setLogs(prev => [...prev, {
+                                type: falha.severidade === 'S1' ? 'error' : 'warning',
+                                text: `[${falha.severidade}] ${falha.mensagem}`,
+                                time: newTime
+                            }]);
+                        });
+                    }
+
+                    // Atualiza análises com status final real
+                    const finalStatus = data.status_final === 'APROVADO' ? 'approved' : 'rejected';
+                    setAnalyses(prev => prev.map((a, idx) => ({
+                        ...a,
+                        status: finalStatus,
+                        progress: 100,
+                        details: idx === 0
+                            ? `SAST: ${falhas.length} falhas encontradas`
+                            : idx === 1
+                                ? `Testes: ${data.analise_dinamica?.aprovados || 0}/${data.analise_dinamica?.total_testes || 0} aprovados`
+                                : `Quality Gate: ${data.status_final}`
+                    })));
+
+                    setLogs(prev => [...prev, {
+                        type: data.status_final === 'APROVADO' ? 'success' : 'error',
+                        text: `Análise finalizada: ${data.status_final}`,
+                        time: newTime
+                    }]);
+
+                    if (data.relatorio_pdf) {
+                        setPdfUrl(data.relatorio_pdf);
+                        setLogs(prev => [...prev, {
+                            type: 'success',
+                            text: `Relatório PDF gerado: ${data.relatorio_pdf}`,
+                            time: newTime
+                        }]);
+                    }
+                } catch (error) {
+                    const errorTime = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+                    setLogs(prev => [...prev, {
+                        type: 'error',
+                        text: `Erro na análise: ${error.message}`,
+                        time: errorTime
+                    }]);
+
+                    setAnalyses(prev => prev.map(a => ({
+                        ...a,
+                        status: 'rejected',
+                        details: 'Erro durante execução'
+                    })));
+                } finally {
+                    setIsAnalyzing(false);
+                }
+            };
+
+            return (
+                <>
+                    <header>
+                        <div className="header-content">
+                            <div className="brand">
+                                <div className="brand-icon">🏄</div>
+                                <div className="brand-text">
+                                    <h1>SURF APP TESTER</h1>
+                                    <p>Plataforma de Quality Gate</p>
+                                </div>
+                            </div>
+                            <div className="header-actions">
+                                <div className="status-badge">
+                                    <div className="status-dot"></div>
+                                    <span>Ativo</span>
+                                </div>
+                                <button className="btn btn-secondary" onClick={() => setShowConfig(true)}>
+                                    <span>⚙️</span> Configurar
+                                </button>
+                                <button className="btn btn-primary" onClick={handleRunAnalysis}>
+                                    <span>▶️</span> Executar Análise
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="main-content">
+                        {showConfig && (
+                            <div style={{
+                                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                                background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                                <div style={{ background: 'white', padding: '24px', borderRadius: '12px', width: '400px' }}>
+                                    <h3 style={{ marginBottom: '16px' }}>Configurações da Análise</h3>
+                                    <div style={{ marginBottom: '16px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Fase de Teste</label>
+                                        <select 
+                                            value={config.fase}
+                                            onChange={(e) => setConfig({...config, fase: e.target.value})}
+                                            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
+                                        >
+                                            <option value="E2E">E2E (End-to-End)</option>
+                                            <option value="UAT">UAT (User Acceptance)</option>
+                                            <option value="SIT">SIT (System Integration)</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ marginBottom: '20px' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                            <input 
+                                                type="checkbox"
+                                                checked={config.useSimulation}
+                                                onChange={(e) => setConfig({...config, useSimulation: e.target.checked})}
+                                            />
+                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>Modo Análise Estática Profunda (Sem Dispositivo)</span>
+                                        </label>
+                                        <p style={{ fontSize: '12px', color: '#64748b', marginLeft: '24px', marginTop: '4px' }}>Executa testes reais na estrutura do APK sem instalar no celular.</p>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                        <button className="btn btn-primary" onClick={() => setShowConfig(false)}>Salvar & Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <input 
+                                    type="file" 
+                                    id="fileInput" 
+                                    accept=".apk" 
+                                    style={{ display: 'none' }} 
+                                    onChange={handleFileUpload}
+                                />
+                                <div className="upload-section" onClick={() => document.getElementById('fileInput').click()}>
+                                    <div className="upload-icon">🏄‍♂️</div>
+                                    <h3>Pegue sua Prancha (APK)</h3>
+                                    <p>Arraste o arquivo para pegar essa onda de testes</p>
+                                    {uploadedFile && (
+                                        <div style={{ marginTop: '20px', animation: 'slideInUp 0.5s ease-out' }}>
+                                            <p style={{ marginBottom: '12px', fontWeight: '700', color: 'var(--accent-primary)' }}>
+                                                ✓ {uploadedFile}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <input 
+                                    type="file" 
+                                    id="codeInput" 
+                                    accept=".zip,.rar,.tar,.gz" 
+                                    style={{ display: 'none' }} 
+                                    onChange={handleCodeUpload}
+                                />
+                                <div className="upload-section" onClick={() => document.getElementById('codeInput').click()}>
+                                    <div className="upload-icon">🌊</div>
+                                    <h3>Upload do Código Fonte</h3>
+                                    <p>Envie o arquivo .zip para análise no fundo do mar</p>
+                                    {uploadedCode && (
+                                        <p style={{ marginTop: '10px', fontWeight: '600' }}>
+                                            ✓ {uploadedCode}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {pdfUrl && (
+                            <div className="section" style={{ 
+                                background: '#ecfdf5', 
+                                borderColor: '#10b981', 
+                                textAlign: 'center',
+                                marginBottom: '24px',
+                                animation: 'slideInUp 0.5s ease-out'
+                            }}>
+                                <h3 style={{ color: '#047857', marginBottom: '8px' }}>✅ Análise Concluída</h3>
+                                <p style={{ color: '#065f46', marginBottom: '16px' }}>
+                                    O relatório completo com os detalhes dos testes e erros encontrados está pronto.
+                                </p>
+                                <a 
+                                    href={pdfUrl} 
+                                    download 
+                                    className="btn btn-primary" 
+                                    style={{ 
+                                        display: 'inline-flex', 
+                                        margin: '0 auto',
+                                        backgroundColor: '#059669',
+                                        border: 'none',
+                                        padding: '12px 24px',
+                                        fontSize: '16px'
+                                    }}
+                                >
+                                    📄 Baixar Relatório PDF
+                                </a>
+                            </div>
+                        )}
+
+                        <div className="stats-grid">
+                            <div className="stat-card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                    <div className="stat-icon">📊</div>
+                                    <div className="stat-label" style={{ margin: 0 }}>Testes Executados</div>
+                                </div>
+                                <div className="stat-value">{stats.testsRun}</div>
+                            </div>
+                            <div className="stat-card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                    <div className="stat-icon">✅</div>
+                                    <div className="stat-label" style={{ margin: 0 }}>Testes Aprovados</div>
+                                </div>
+                                <div className="stat-value" style={{ color: '#10b981' }}>{stats.passed}</div>
+                            </div>
+                            <div className="stat-card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                    <div className="stat-icon">❌</div>
+                                    <div className="stat-label" style={{ margin: 0 }}>Falhas Detectadas</div>
+                                </div>
+                                <div className="stat-value" style={{ color: stats.failed > 0 ? '#ef4444' : '#10b981' }}>{stats.failed}</div>
+                            </div>
+                            <div className="stat-card">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                    <div className="stat-icon">📈</div>
+                                    <div className="stat-label" style={{ margin: 0 }}>Taxa de Aprovação</div>
+                                </div>
+                                <div className="stat-value" style={{ color: stats.coverage >= 90 ? '#10b981' : stats.coverage >= 70 ? '#f59e0b' : '#ef4444' }}>{stats.coverage}%</div>
+                            </div>
+                        </div>
+
+                        {testResults.length > 0 && (
+                            <div className="section">
+                                <div className="section-header">
+                                    <h2 className="section-title">Resultados Detalhados dos Testes</h2>
+                                </div>
+                                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                                                <th style={{ padding: '10px', color: '#64748b' }}>Status</th>
+                                                <th style={{ padding: '10px', color: '#64748b' }}>Teste</th>
+                                                <th style={{ padding: '10px', color: '#64748b' }}>Mensagem</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {testResults.map((test, idx) => (
+                                                <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                    <td style={{ padding: '10px' }}>
+                                                        <span style={{ 
+                                                            padding: '4px 8px', 
+                                                            borderRadius: '4px', 
+                                                            fontSize: '11px', 
+                                                            fontWeight: '700',
+                                                            backgroundColor: test.status === 'APROVADO' ? '#dcfce7' : '#fee2e2',
+                                                            color: test.status === 'APROVADO' ? '#166534' : '#991b1b'
+                                                        }}>
+                                                            {test.status}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: '10px', fontWeight: '500' }}>{test.name}</td>
+                                                    <td style={{ padding: '10px', color: '#64748b' }}>{test.message || '-'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="content-grid">
+                            <div className="content-left">
+                                <div className="section">
+                                    <div className="section-header">
+                                        <h2 className="section-title">
+                                            Pipeline de Análise
+                                            <span className="section-badge">3 serviços</span>
+                                        </h2>
+                                    </div>
+
+                                    {analyses.map(analysis => (
+                                        <div key={analysis.id} className="analysis-item">
+                                            <div className="analysis-header">
+                                                <span className="analysis-name">{analysis.name}</span>
+                                                <span className={`analysis-status status-${analysis.status}`}>
+                                                    {analysis.status}
+                                                </span>
+                                            </div>
+                                            <div className="analysis-details">
+                                                {analysis.details}
+                                            </div>
+                                            <div className="service-tag">
+                                                Serviço: {analysis.service}
+                                            </div>
+                                            <div className="progress-wrapper">
+                                                <div className="progress-bar">
+                                                    <div 
+                                                        className="progress-fill" 
+                                                        style={{ width: `${analysis.progress}%` }}
+                                                    ></div>
+                                                </div>
+                                                <span className="progress-text">{Math.round(analysis.progress)}%</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="section">
+                                    <div className="section-header">
+                                        <h2 className="section-title">Métricas de Segurança</h2>
+                                    </div>
+                                    <div className="metrics-grid">
+                                        <div className="metric-item">
+                                            <div className="metric-label">Vulnerabilidades (S1)</div>
+                                            <div className="metric-value" style={{ color: securityMetrics.vulnerabilities > 0 ? '#ef4444' : '#10b981' }}>
+                                                {securityMetrics.vulnerabilities}
+                                            </div>
+                                        </div>
+                                        <div className="metric-item">
+                                            <div className="metric-label">Defeitos S1</div>
+                                            <div className="metric-value" style={{ color: securityMetrics.s1Defects > 0 ? '#ef4444' : '#10b981' }}>
+                                                {securityMetrics.s1Defects}
+                                            </div>
+                                        </div>
+                                        <div className="metric-item">
+                                            <div className="metric-label">Defeitos S2</div>
+                                            <div className="metric-value" style={{ color: securityMetrics.s2Defects > 5 ? '#f59e0b' : '#10b981' }}>
+                                                {securityMetrics.s2Defects}
+                                            </div>
+                                        </div>
+                                        <div className="metric-item">
+                                            <div className="metric-label">Problemas de Permissões</div>
+                                            <div className="metric-value">{securityMetrics.permissions}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="content-right">
+                                <div className="section">
+                                    <div className="section-header">
+                                        <h2 className="section-title">
+                                            Logs do Console
+                                        </h2>
+                                    </div>
+                                    <div className="terminal">
+                                        {logs.map((log, i) => (
+                                            <div key={i} className={`terminal-line ${log.type}`}>
+                                                <span className="terminal-timestamp">[{log.time}]</span>
+                                                <span className="terminal-content">{log.text}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

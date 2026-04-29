@@ -1,0 +1,37 @@
+name: Surf Quality Gate CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  sast-and-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v3
+
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Instalar dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Executar Análise Estática (SAST) e Testes Simulados
+      run: |
+        # Roda o Pytest na camada de código e simulação de app
+        pytest tests_repo/ --junitxml=resultado_ci.xml
+
+    - name: Upload de Resultados
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: relatorio-testes
+        path: resultado_ci.xml
