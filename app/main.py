@@ -43,13 +43,11 @@ app.add_middleware(
 )
 
 # Servir arquivos estáticos do frontend
-if os.path.exists("frontend"):
-    app.mount("/static", StaticFiles(directory="frontend"), name="static")
 frontend_dir = "frontend/build" if os.path.exists("frontend/build") else "frontend"
 
 if os.path.exists(frontend_dir):
     # Monta os arquivos estáticos (JS, CSS, Imagens)
-    app.mount("/static", StaticFiles(directory=f"{frontend_dir}/static" if os.path.exists(f"{frontend_dir}/static") else frontend_dir), name="static")
+    app.mount("/static", StaticFiles(directory=f"{frontend_dir}/static" if os.path.exists(f"{frontend_dir}/static") else frontend_dir), name="static_files")
 
 # Servir arquivos gerados (PDFs) da pasta storage
 os.makedirs("storage", exist_ok=True)
@@ -109,7 +107,7 @@ async def get_historico():
 def upload_e_testar(
     apk_surf: UploadFile = File(None),
     apk_pagtel: UploadFile = File(None),
-    fase: str = Form("E2E")
+    forcar_simulacao: bool = Form(False)
 ):
     """
     Endpoint principal que realiza o ciclo completo:
@@ -119,6 +117,8 @@ def upload_e_testar(
     4. Quality Gate (Aprovação/Reprovação)
     5. Geração de PDF
     """
+    fase = "Teste de QA/Homologação"
+    
     if not apk_surf and not apk_pagtel:
         return JSONResponse(status_code=400, content={"message": "Nenhum arquivo enviado. Envie um APK Surf ou APK Pagtel."})
 
@@ -199,7 +199,10 @@ def upload_e_testar(
             modo_execucao = "REAL_DEVICE"
 
             print(f"Tentando executar testes em: {caminho_testes}")
-            try:
+            try: # O 'not forcar_simulacao' garante que só tentaremos o celular se a caixa NÃO estiver marcada
+                if forcar_simulacao:
+                    raise Exception("Simulação forçada pelo usuário.")
+
                 # Verifica se o Appium está rodando antes de tentar testar
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(2.0) # Aumentado timeout para evitar falsos negativos
@@ -376,7 +379,7 @@ def executar_teste_web(url: str = Form(...), tipo_teste: str = Form("RECARGA"), 
         motivos = [f['mensagem'] for f in resultados_testes.get('lista_falhas', [])]
         
         # 5. Gera o relatório PDF
-        pdf = PDFReporter.gerar(resultados_testes, aprovado, motivos, fase="WEB")
+        pdf = PDFReporter.gerar(resultados_testes, aprovado, motivos, fase="Teste de QA/Homologação")
         
         # 6. Retorna a resposta
         return {

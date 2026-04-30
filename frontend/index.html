@@ -701,8 +701,6 @@
             const [uploadedCode, setUploadedCode] = useState(null);
             const [codeFileObj, setCodeFileObj] = useState(null);
             const [pdfUrl, setPdfUrl] = useState(null);
-            const [showConfig, setShowConfig] = useState(false);
-            const [config, setConfig] = useState({ fase: 'E2E', useSimulation: true }); // Padrão true para evitar erros
             const [testResults, setTestResults] = useState([]);
             const [isAnalyzing, setIsAnalyzing] = useState(false);
             const [securityMetrics, setSecurityMetrics] = useState({
@@ -955,22 +953,23 @@
                     time
                 }]);
 
+                let pollInterval;
                 try {
                     const formData = new FormData();
                     if (fileObj) formData.append('apk_surf', fileObj);
                     if (codeFileObj) formData.append('apk_pagtel', codeFileObj);
                     
-                    formData.append('fase', config.fase);
-                    formData.append('forcar_simulacao', config.useSimulation);
+                    formData.append('fase', 'Teste de QA/Homologação');
+                    formData.append('forcar_simulacao', false);
 
                     setLogs(prev => [...prev, {
                         type: 'info',
-                        text: `Iniciando testes (Fase: ${config.fase})...`,
+                        text: `Iniciando testes (Fase: Teste de QA/Homologação)...`,
                         time: new Date().toLocaleTimeString('pt-BR', { hour12: false })
                     }]);
 
                     // Inicia Polling de Status
-                    const pollInterval = setInterval(async () => {
+                    pollInterval = setInterval(async () => {
                         try {
                             const fileName = fileObj ? fileObj.name : codeFileObj.name;
                             const res = await fetch(`/api/analysis-status/${fileName}`);
@@ -996,8 +995,6 @@
                         body: formData
                     });
                     
-                    clearInterval(pollInterval); // Garante parada do polling
-
                     const data = await response.json();
                     const newTime = new Date().toLocaleTimeString('pt-BR', { hour12: false });
 
@@ -1069,6 +1066,7 @@
                         }]);
                     }
                 } catch (error) {
+                    if (pollInterval) clearInterval(pollInterval);
                     const errorTime = new Date().toLocaleTimeString('pt-BR', { hour12: false });
                     setLogs(prev => [...prev, {
                         type: 'error',
@@ -1082,6 +1080,7 @@
                         details: 'Erro durante execução'
                     })));
                 } finally {
+                    if (pollInterval) clearInterval(pollInterval);
                     setIsAnalyzing(false);
                 }
             };
@@ -1102,9 +1101,6 @@
                                     <div className="status-dot"></div>
                                     <span>Ativo</span>
                                 </div>
-                                <button className="btn btn-secondary" onClick={() => setShowConfig(true)}>
-                                    <span>⚙️</span> Configurar
-                                </button>
                                 <button className="btn btn-primary" onClick={handleRunAnalysis}>
                                     <span>▶️</span> Executar Análise
                                 </button>
@@ -1113,44 +1109,6 @@
                     </header>
 
                     <div className="main-content">
-                        {showConfig && (
-                            <div style={{
-                                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}>
-                                <div style={{ background: 'white', padding: '24px', borderRadius: '12px', width: '400px' }}>
-                                    <h3 style={{ marginBottom: '16px' }}>Configurações da Análise</h3>
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Fase de Teste</label>
-                                        <select 
-                                            value={config.fase}
-                                            onChange={(e) => setConfig({...config, fase: e.target.value})}
-                                            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                                        >
-                                            <option value="E2E">E2E (End-to-End)</option>
-                                            <option value="UAT">UAT (User Acceptance)</option>
-                                            <option value="SIT">SIT (System Integration)</option>
-                                        </select>
-                                    </div>
-                                    <div style={{ marginBottom: '20px' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                            <input 
-                                                type="checkbox"
-                                                checked={config.useSimulation}
-                                                onChange={(e) => setConfig({...config, useSimulation: e.target.checked})}
-                                            />
-                                            <span style={{ fontWeight: '600', fontSize: '14px' }}>Modo Análise Estática Profunda (Sem Dispositivo)</span>
-                                        </label>
-                                        <p style={{ fontSize: '12px', color: '#64748b', marginLeft: '24px', marginTop: '4px' }}>Executa testes reais na estrutura do APK sem instalar no celular.</p>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                                        <button className="btn btn-primary" onClick={() => setShowConfig(false)}>Salvar & Fechar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         {/* Sessão Mobile */}
                         <div style={{ marginBottom: '32px' }}>
                             <div className="section-header" style={{ marginBottom: '16px', paddingBottom: '8px' }}>
