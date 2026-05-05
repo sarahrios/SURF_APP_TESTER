@@ -6,6 +6,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 @pytest.fixture(scope="session")
 def browser():
@@ -25,7 +27,10 @@ def browser():
 
     driver = None
     try:
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=chrome_options
+        )
         driver.get(url)
         print(f"✅ Navegador aberto com sucesso na URL: {url}")
         print(f"✅ ICCID recebido para teste: {iccid}")
@@ -43,13 +48,22 @@ def test_01_iniciar_ativacao(browser):
     iccid = os.getenv("TARGET_ICCID") # AQUI ESTÁ O SEU ICCID COPIADO!
     try:
         time.sleep(3) # Aguarda carregamento inicial
+        
+        # Verifica se não carregou uma página de erro padrão do Chrome
+        if "chromewebdata" in browser.current_url or "chrome-error" in browser.page_source:
+            raise Exception("A página não existe ou está fora do ar (Erro DNS/Conexão).")
+
+        # Aguarda a renderização do título da página
+        WebDriverWait(browser, 15).until(lambda driver: driver.title != "")
         assert browser.title != "", "A página carregou, mas não possui um título."
         print(f"✅ Site de ativação carregado: {browser.title}")
         print(f"⏳ Aguardando os seus próximos passos para digitar o ICCID: {iccid}")
         
         os.makedirs("storage", exist_ok=True)
-        browser.save_screenshot("storage/test_ativacao_01_inicio.png")
+        
+        # O nome do print DEVE ser igual ao nome da função de teste!
+        browser.save_screenshot("storage/test_01_iniciar_ativacao.png")
     except Exception as e:
         os.makedirs("storage", exist_ok=True)
-        browser.save_screenshot("storage/test_ativacao_01_inicio_erro.png")
+        browser.save_screenshot("storage/test_01_iniciar_ativacao_erro.png")
         pytest.fail(f"Falha na página de ativação: {e}")

@@ -848,6 +848,7 @@
                 const urlId = tipo === 'RECARGA' ? 'webUrlInput' : 'activationUrlInput';
                 const url = document.getElementById(urlId)?.value;
                 const iccid = tipo === 'ATIVACAO' ? document.getElementById('iccidInput')?.value : null;
+                const msisdn = tipo === 'RECARGA' ? document.getElementById('msisdnInput')?.value : null;
 
                 if (!url) {
                     setLogs(prev => [...prev, {
@@ -862,6 +863,15 @@
                     setLogs(prev => [...prev, {
                         type: 'error',
                         text: 'Por favor, insira o ICCID para o teste de Ativação.',
+                        time: new Date().toLocaleTimeString('pt-BR', { hour12: false })
+                    }]);
+                    return;
+                }
+
+                if (tipo === 'RECARGA' && !msisdn) {
+                    setLogs(prev => [...prev, {
+                        type: 'error',
+                        text: 'Por favor, insira o MSISDN para o teste de Recarga.',
                         time: new Date().toLocaleTimeString('pt-BR', { hour12: false })
                     }]);
                     return;
@@ -891,6 +901,7 @@
                     formData.append('url', url);
                     formData.append('tipo_teste', tipo);
                     if (iccid) formData.append('iccid', iccid);
+                    if (msisdn) formData.append('msisdn', msisdn);
 
                     const response = await fetch('/executar-teste-web', {
                         method: 'POST',
@@ -1196,6 +1207,12 @@
                                                 placeholder="https://www.exemplo.com"
                                                 onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
                                                 onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+                                            />
+                                            <input 
+                                                type="text" 
+                                                id="msisdnInput"
+                                                style={{ width: '100%', padding: '10px', marginTop: '10px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '14px' }}
+                                                placeholder="Digite o MSISDN (Ex: 11999999999)"
                                             />
                                             <button className="btn btn-primary" style={{ width: '100%', marginTop: '15px', justifyContent: 'center', background: 'linear-gradient(90deg, #4f46e5, #7c3aed)' }} onClick={() => handleRunWebAnalysis('RECARGA')}>
                                                 <span>🌐</span> Testar Site

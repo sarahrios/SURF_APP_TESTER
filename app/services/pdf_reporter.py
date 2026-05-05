@@ -28,8 +28,10 @@ class PDFReporter:
     @staticmethod
     def gerar(resultados, aprovado, motivos, fase="E2E"):
         os.makedirs("storage", exist_ok=True)
+        
+        fase_segura = str(fase).replace("/", "_").replace("\\", "_")
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"storage/relatorio_teste_{fase}_{timestamp}.pdf"
+        filename = f"storage/relatorio_teste_{fase_segura}_{timestamp}.pdf"
         
         # Margens mais largas para aspecto profissional
         doc = SimpleDocTemplate(filename, pagesize=A4, rightMargin=20*mm, leftMargin=20*mm, topMargin=20*mm, bottomMargin=20*mm)

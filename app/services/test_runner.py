@@ -19,6 +19,14 @@ class TestRunner:
                 os.remove(arquivo_xml)
             except:
                 pass
+                
+        # Limpa imagens antigas de execuções anteriores (evita prints de app no teste web)
+        for f in os.listdir("storage"):
+            if f.endswith(".png"):
+                try:
+                    os.remove(os.path.join("storage", f))
+                except:
+                    pass
             
         print(f"--- Executando testes em: {caminho_testes} ---")
         

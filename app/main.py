@@ -117,7 +117,7 @@ def upload_e_testar(
     4. Quality Gate (Aprovação/Reprovação)
     5. Geração de PDF
     """
-    fase = "Teste de QA/Homologação"
+    fase = "Teste_QA_Homologacao"
     
     if not apk_surf and not apk_pagtel:
         return JSONResponse(status_code=400, content={"message": "Nenhum arquivo enviado. Envie um APK Surf ou APK Pagtel."})
@@ -349,7 +349,7 @@ def upload_e_testar(
         latest_results["analysis_in_progress"] = False
 
 @app.post("/executar-teste-web")
-def executar_teste_web(url: str = Form(...), tipo_teste: str = Form("RECARGA"), iccid: str = Form(None)):
+def executar_teste_web(url: str = Form(...), tipo_teste: str = Form("RECARGA"), iccid: str = Form(None), msisdn: str = Form(None)):
     """
     Endpoint que realiza testes automatizados em um site.
     """
@@ -366,10 +366,14 @@ def executar_teste_web(url: str = Form(...), tipo_teste: str = Form("RECARGA"), 
         os.environ["TARGET_URL"] = url
         if iccid:
             os.environ["TARGET_ICCID"] = iccid
+        if msisdn:
+            os.environ["TARGET_MSISDN"] = msisdn
         
         print(f"--- Iniciando testes web ({tipo_teste}) para a URL: {url} ---")
         if iccid:
             print(f"--- ICCID a ser utilizado: {iccid} ---")
+        if msisdn:
+            print(f"--- MSISDN a ser utilizado: {msisdn} ---")
         
         # 3. Executa os testes
         resultados_testes = TestRunner.executar_testes(caminho_testes)
@@ -379,7 +383,7 @@ def executar_teste_web(url: str = Form(...), tipo_teste: str = Form("RECARGA"), 
         motivos = [f['mensagem'] for f in resultados_testes.get('lista_falhas', [])]
         
         # 5. Gera o relatório PDF
-        pdf = PDFReporter.gerar(resultados_testes, aprovado, motivos, fase="Teste de QA/Homologação")
+        pdf = PDFReporter.gerar(resultados_testes, aprovado, motivos, fase="Teste_QA_Homologacao")
         
         # 6. Retorna a resposta
         return {
