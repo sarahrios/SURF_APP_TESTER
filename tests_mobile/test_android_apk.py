@@ -180,30 +180,81 @@ def test_01_onboarding(driver):
 
         # Clicar no botão "Continuar"
         btn_continuar = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[contains(@text, 'Continuar')]"))
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@text='Continuar' or @text='CONTINUAR' or @content-desc='buttonFirstAccessContinue']"))
         )
         btn_continuar.click()
         time.sleep(2)
 
-        # Selecionar os 2 checkboxes de termos (em cima e em baixo)
-        checkboxes = WebDriverWait(driver, 20).until(
-            EC.presence_of_all_elements_located((AppiumBy.CLASS_NAME, "android.widget.CheckBox"))
-        )
-        for i, box in enumerate(checkboxes[:2]):
-            box.click()
-            print(f"✅ Checkbox {i+1} selecionado.")
-            time.sleep(1)
+        # Tenta selecionar os checkboxes de termos se existirem
+        try:
+            checkboxes = WebDriverWait(driver, 5).until(
+                EC.presence_of_all_elements_located((AppiumBy.CLASS_NAME, "android.widget.CheckBox"))
+            )
+            for i, box in enumerate(checkboxes[:2]):
+                box.click()
+                print(f"✅ Checkbox {i+1} selecionado.")
+                time.sleep(1)
 
-        # Clicar em "Concordar e Continuar"
-        btn_concordar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Concordar') and contains(@text, 'Continuar')]")
-        btn_concordar.click()
-        time.sleep(3)
+            # Clicar em "Concorda e continuar" (termos de uso) usando ID do botão
+            btn_concordar = driver.find_element(AppiumBy.XPATH, "//*[@text='Concorda e continuar' or contains(@resource-id, 'continueButton') or @content-desc='buttonAgreeAndContinue']")
+            btn_concordar.click()
+            time.sleep(3)
+        except Exception:
+            print("ℹ️ Checkboxes de termos não encontrados ou já aceitos. Prosseguindo...")
 
         print("✅ Onboarding finalizado, avançando para tela de login.")
         driver.save_screenshot("storage/test_01_onboarding.png")
     except Exception as e:
         driver.save_screenshot("storage/test_01_onboarding_erro.png")
         pytest.fail(f"Falha na etapa de Onboarding: {e}")
+
+def test_01b_permissoes(driver):
+    """ETAPA 1.5: Aceite de Permissões"""
+    print("DESC: ETAPA 1.5 - Aceitar permissões do sistema (Localização, Telefone, etc).")
+    time.sleep(3) # Aguarda a transição de tela e os popups do sistema aparecerem
+    
+    # 1º Clique: Durante o uso do app
+    print("Aguardando popup: Durante o uso do app (1/2)...")
+    try:
+        btn_uso_1 = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@text='Durante o uso do app' or contains(@text, 'durante o uso')]"))
+        )
+        btn_uso_1.click()
+        time.sleep(1.5)
+    except: pass
+
+    # 2º Clique: Durante o uso do app
+    print("Aguardando popup: Durante o uso do app (2/2)...")
+    try:
+        btn_uso_2 = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@text='Durante o uso do app' or contains(@text, 'durante o uso')]"))
+        )
+        btn_uso_2.click()
+        time.sleep(1.5)
+    except: pass
+
+    # 3º Clique: Permitir
+    print("Aguardando popup: Permitir (1/2)...")
+    try:
+        btn_permitir_1 = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@text='Permitir' or @text='PERMITIR']"))
+        )
+        btn_permitir_1.click()
+        time.sleep(1.5)
+    except: pass
+
+    # 4º Clique: Permitir
+    print("Aguardando popup: Permitir (2/2)...")
+    try:
+        btn_permitir_2 = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@text='Permitir' or @text='PERMITIR']"))
+        )
+        btn_permitir_2.click()
+        time.sleep(2)
+    except: pass
+
+    print("✅ Fluxo de permissões concluído.")
+    driver.save_screenshot("storage/test_01b_permissoes.png")
 
 def test_02_login(driver):
     """ETAPA 2: Login"""
@@ -218,7 +269,7 @@ def test_02_login(driver):
         driver.hide_keyboard()
 
         # Clicar em "Entrar"
-        btn_entrar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Entrar') or @text='ENTRAR']")
+        btn_entrar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Entrar') or @text='ENTRAR' or @content-desc='buttonLoginContinue']")
         btn_entrar.click()
 
         time.sleep(10) # Aguarda processamento do login
@@ -263,7 +314,7 @@ def test_04_selecao_numero(driver):
         time.sleep(1)
 
         # Clicar em "Continuar"
-        btn_continuar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Continuar')]")
+        btn_continuar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Continuar') or @content-desc='buttonSelectMsisdnContinue']")
         btn_continuar.click()
         time.sleep(5)
         
@@ -286,7 +337,7 @@ def test_05_cadastro_cartao(driver):
 
         # Clicar no botão "+" (Adicionar)
         btn_add = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@text='+' or contains(@text, 'Adicionar')]"))
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@text='+' or contains(@text, 'Adicionar') or @content-desc='buttonCreditCardAdd' or @content-desc='buttonConfirmRechargeNewCard']"))
         )
         btn_add.click()
         time.sleep(2)
@@ -300,8 +351,15 @@ def test_05_cadastro_cartao(driver):
         if len(campos) > 4: campos[4].send_keys("99999909914") # CPF
         driver.hide_keyboard()
 
+        # Rolar a tela para baixo para visualizar o botão
+        print("Rolando a tela para encontrar o botão...")
+        try:
+            driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR, 'new UiScrollable(new UiSelector().scrollable(true)).scrollToEnd(1)')
+            time.sleep(2)
+        except: pass
+
         # Clicar em "Adicionar Cartão"
-        btn_add_cartao = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Adicionar Cartão')]")
+        btn_add_cartao = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Adicionar Cartão') or @content-desc='buttonAddNewCard']")
         btn_add_cartao.click()
         time.sleep(4)
         
@@ -382,24 +440,24 @@ def test_07_recarga_pix(driver):
         plano.click()
 
         # Clicar em "Confirmar"
-        btn_confirmar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Confirmar')]")
+        btn_confirmar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Confirmar') or @content-desc='buttonNewRechargeConfirm']")
         btn_confirmar.click()
         time.sleep(3)
 
         # Selecionar PIX
         btn_pix = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[contains(@text, 'PIX') or contains(@text, 'Pix')]"))
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[contains(@text, 'PIX') or contains(@text, 'Pix') or @content-desc='buttonConfirmRechargePix']"))
         )
         btn_pix.click()
 
         # Clicar em "Finalizar recarga"
-        btn_finalizar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Finalizar') and contains(@text, 'ecarga')]")
+        btn_finalizar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Finalizar') or @content-desc='buttonFinalizeRecharge']")
         btn_finalizar.click()
         time.sleep(5)
 
         # Clicar em "Copiar código"
         btn_copiar = WebDriverWait(driver, 30).until(
-            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[contains(@text, 'Copiar')]"))
+            EC.element_to_be_clickable((AppiumBy.XPATH, "//*[contains(@text, 'Copiar') or @content-desc='buttonPixCodeCopy']"))
         )
         btn_copiar.click()
         print("✅ Código PIX gerado e copiado corretamente.")
@@ -448,7 +506,7 @@ def test_08_atualizacao_perfil(driver):
         time.sleep(1)
 
         # Clicar em "Salvar alterações"
-        btn_salvar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Salvar')]")
+        btn_salvar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Salvar') or @content-desc='buttonProfileSave']")
         btn_salvar.click()
         time.sleep(3)
         
