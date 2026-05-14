@@ -1162,11 +1162,12 @@
                                         accept=".apk" 
                                         style={{ display: 'none' }} 
                                         onChange={handleCodeUpload}
+                                        disabled
                                     />
-                                    <div className="upload-section" style={{ width: '100%', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }} onClick={() => document.getElementById('codeInput').click()}>
+                                    <div className="upload-section" style={{ width: '100%', margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', opacity: 0.5, pointerEvents: 'none', cursor: 'not-allowed' }}>
                                         <div>
                                             <div className="upload-icon">🌊</div>
-                                            <h3>Pegue sua prancha (APK Pagtel)</h3>
+                                            <h3>Pegue sua prancha (APK Pagtel) <span style={{ color: "red", fontSize: "0.8em" }}>(EM BREVE)</span></h3>
                                             <p>Envie o arquivo .apk para análise no fundo do mar</p>
                                             {uploadedCode && (
                                                 <div style={{ marginTop: '15px', animation: 'slideInUp 0.5s ease-out' }}>
@@ -1177,7 +1178,7 @@
                                             )}
                                         </div>
                                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: 1 }}>
-                                            <button className="btn btn-secondary" style={{ width: '100%', marginTop: '15px', justifyContent: 'center', pointerEvents: 'none' }}>
+                                            <button className="btn btn-secondary" style={{ width: '100%', marginTop: '15px', justifyContent: 'center', pointerEvents: 'none' }} disabled>
                                                 <span>📁</span> Selecionar APK
                                             </button>
                                         </div>
