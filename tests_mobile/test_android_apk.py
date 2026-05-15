@@ -19,6 +19,9 @@ except ImportError:
     except ImportError:
         APK = None
 
+# Variável global para controlar se as etapas pós-login devem ser executadas
+LOGIN_SUCESSO = False
+
 # Usamos scope="session" para garantir uma única sessão para todos os testes (Enterprise)
 @pytest.fixture(scope="session")
 def driver():
@@ -258,6 +261,7 @@ def test_01b_permissoes(driver):
 
 def test_02_login(driver):
     """ETAPA 2: Login"""
+    global LOGIN_SUCESSO
     print("DESC: ETAPA 2 - Login.")
     try:
         campos = WebDriverWait(driver, 30).until(
@@ -272,14 +276,24 @@ def test_02_login(driver):
         btn_entrar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Entrar') or @text='ENTRAR' or @content-desc='buttonLoginContinue']")
         btn_entrar.click()
 
-        print("⏳ Aguardando processamento do login e validando o resultado...")
-        time.sleep(8) # Aguarda transição
+        print("⏳ Monitorando a tela para capturar erros rápidos (Toast/Snackbar)...")
         
-        # VALIDAÇÃO REAL: Lê a tela atual e procura por avisos de erro
-        page_source = driver.page_source.lower()
-        if "senha incorreta" in page_source or "inválid" in page_source or "erro" in page_source or "não encontrad" in page_source:
-            raise Exception("O app retornou um erro de login na tela (ex: Senha incorreta ou CPF inválido).")
+        # VALIDAÇÃO CONTÍNUA: Fica lendo a tela ativamente por até 10 segundos.
+        # Isso garante que pegaremos as mensagens que aparecem no rodapé e somem rápido!
+        inicio = time.time()
+        erro_detectado = False
+        
+        while time.time() - inicio < 10:
+            page_source = driver.page_source.lower()
+            if "senha incorreta" in page_source or "incorreto" in page_source or "inválid" in page_source or "erro" in page_source or "não encontrad" in page_source:
+                erro_detectado = True
+                break
+            time.sleep(0.5) # Pausa curta para tentar várias vezes por segundo
+            
+        if erro_detectado:
+            raise Exception("O app retornou um erro de login na tela (ex: Usuário ou senha incorretos).")
 
+        LOGIN_SUCESSO = True
         print("✅ Login validado com sucesso (sem erros na tela).")
         driver.save_screenshot("storage/test_02_login.png")
     except Exception as e:
@@ -288,6 +302,9 @@ def test_02_login(driver):
 
 def test_03_biometria(driver):
     """ETAPA 3: Biometria"""
+    global LOGIN_SUCESSO
+    if not LOGIN_SUCESSO:
+        pytest.fail("Teste abortado: O fluxo depende do Login (Etapa 2), que falhou.")
     print("DESC: ETAPA 3 - Biometria.")
     try:
         # Validar tela de cadastro de biometria e Clicar em "SIM"
@@ -304,6 +321,9 @@ def test_03_biometria(driver):
 
 def test_04_selecao_numero(driver):
     """ETAPA 4: Seleção de Número"""
+    global LOGIN_SUCESSO
+    if not LOGIN_SUCESSO:
+        pytest.fail("Teste abortado: O fluxo depende do Login (Etapa 2), que falhou.")
     print("DESC: ETAPA 4 - Seleção de Número.")
     try:
         # Selecionar uma caixa com o número específico (19)92009-9246
@@ -338,6 +358,9 @@ def test_04_selecao_numero(driver):
 
 def test_05_cadastro_cartao(driver):
     """ETAPA 5: Cadastro de Cartão (Pagamento)"""
+    global LOGIN_SUCESSO
+    if not LOGIN_SUCESSO:
+        pytest.fail("Teste abortado: O fluxo depende do Login (Etapa 2), que falhou.")
     print("DESC: ETAPA 5 - Cadastro de Cartão (Pagamento).")
     try:
         # Acessar "Pagamentos"
@@ -399,6 +422,9 @@ def test_05_cadastro_cartao(driver):
 
 def test_06_consulta_consumo(driver):
     """ETAPA 6: Consulta de Consumo"""
+    global LOGIN_SUCESSO
+    if not LOGIN_SUCESSO:
+        pytest.fail("Teste abortado: O fluxo depende do Login (Etapa 2), que falhou.")
     print("DESC: ETAPA 6 - Consulta de Consumo.")
     try:
         # Acessar "Consumo"
@@ -441,6 +467,9 @@ def test_06_consulta_consumo(driver):
 
 def test_07_recarga_pix(driver):
     """ETAPA 7: Recarga via PIX"""
+    global LOGIN_SUCESSO
+    if not LOGIN_SUCESSO:
+        pytest.fail("Teste abortado: O fluxo depende do Login (Etapa 2), que falhou.")
     print("DESC: ETAPA 7 - Recarga via PIX.")
     try:
         # Acessar Menu
@@ -509,6 +538,9 @@ def test_07_recarga_pix(driver):
 
 def test_08_atualizacao_perfil(driver):
     """ETAPA 8: Atualização de Perfil"""
+    global LOGIN_SUCESSO
+    if not LOGIN_SUCESSO:
+        pytest.fail("Teste abortado: O fluxo depende do Login (Etapa 2), que falhou.")
     print("DESC: ETAPA 8 - Atualização de Perfil.")
     try:
         # Acessar Menu

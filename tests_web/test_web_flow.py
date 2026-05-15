@@ -109,12 +109,19 @@ def test_02_inserir_msisdn_e_ver_planos(browser):
         botao_planos.click()
         print("✅ Botão 'VER PLANOS' clicado com sucesso.")
         
-        # Aguarda a próxima tela carregar (Transição)
-        time.sleep(5)
+        print("⏳ Monitorando a tela para capturar erros rápidos (Toasts/Alertas)...")
         
-        # VALIDAÇÃO REAL: Verifica se o número inserido foi recusado
-        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
-        if "erro" in texto_pagina or "inválido" in texto_pagina or "não encontrado" in texto_pagina:
+        # VALIDAÇÃO CONTÍNUA: Lê a tela a cada 0.5s para pegar balões de erro que somem rápido
+        inicio = time.time()
+        erro_detectado = False
+        while time.time() - inicio < 8:
+            texto_pagina = browser.page_source.lower()
+            if "erro" in texto_pagina or "inválido" in texto_pagina or "não encontrado" in texto_pagina or "incorreto" in texto_pagina:
+                erro_detectado = True
+                break
+            time.sleep(0.5)
+
+        if erro_detectado:
             raise Exception("Erro ao buscar planos: MSISDN inválido ou erro no site detectado na tela.")
 
         # 📸 Print do Fim (Este print irá automaticamente para o PDF pois tem o exato nome da função!)
@@ -156,11 +163,22 @@ def test_03_selecionar_plano_e_pix(browser):
         botao_pix.click()
         print("✅ Opção de pagamento 'PIX' selecionada com sucesso.")
         
-        time.sleep(5) # Aguarda transição para tela do QRCode/Pix
+        print("⏳ Monitorando a tela para capturar o resultado do PIX...")
         
-        # VALIDAÇÃO REAL: Verifica se falhou após selecionar pagamento
-        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
-        if "erro" in texto_pagina or "falha" in texto_pagina or "tente novamente" in texto_pagina:
+        # VALIDAÇÃO CONTÍNUA: Aguarda até gerar o QRCode ou dar erro
+        inicio = time.time()
+        erro_detectado = False
+        while time.time() - inicio < 10:
+            texto_pagina = browser.page_source.lower()
+            if "copiar" in texto_pagina or "qr code" in texto_pagina.replace("qrcode", "qr code") or "pagamento" in texto_pagina:
+                print("✅ Tela do PIX carregada com sucesso.")
+                break
+            elif "erro" in texto_pagina or "falha" in texto_pagina or "tente novamente" in texto_pagina:
+                erro_detectado = True
+                break
+            time.sleep(0.5)
+
+        if erro_detectado:
             raise Exception("Erro na geração do PIX detectado na tela final do site.")
 
         # 📸 Print do Fim (Este print irá automaticamente para o PDF com o nome exato da função)

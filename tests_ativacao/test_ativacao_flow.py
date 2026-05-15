@@ -97,11 +97,18 @@ def test_02_inserir_cpf(browser):
         )
         btn_continuar.click()
         print("✅ Botão 'Continuar' clicado.")
-        time.sleep(4) # Aguarda a próxima tela carregar
         
-        # VALIDAÇÃO REAL: Verifica se o site recusou o CPF
-        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
-        if "erro" in texto_pagina or "inválido" in texto_pagina or "incorreto" in texto_pagina:
+        print("⏳ Monitorando a tela para capturar erros rápidos...")
+        inicio = time.time()
+        erro_detectado = False
+        while time.time() - inicio < 8:
+            texto_pagina = browser.page_source.lower()
+            if "erro" in texto_pagina or "inválido" in texto_pagina or "incorreto" in texto_pagina:
+                erro_detectado = True
+                break
+            time.sleep(0.5)
+            
+        if erro_detectado:
             raise Exception("Erro ao avançar: CPF inválido ou erro no site detectado.")
 
     except Exception as e:
@@ -159,11 +166,17 @@ def test_03_inserir_ddd(browser):
         if not sucesso_clique:
             raise Exception("Não foi possível encontrar um botão Continuar visível após preencher o DDD.")
 
-        time.sleep(6) # Aguarda a próxima tela carregar (ICCID)
-
-        # VALIDAÇÃO REAL: Verifica se o site recusou o DDD
-        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
-        if "erro" in texto_pagina or "inválido" in texto_pagina or "incorreto" in texto_pagina:
+        print("⏳ Monitorando a tela para capturar erros rápidos...")
+        inicio = time.time()
+        erro_detectado = False
+        while time.time() - inicio < 8:
+            texto_pagina = browser.page_source.lower()
+            if "erro" in texto_pagina or "inválido" in texto_pagina or "incorreto" in texto_pagina:
+                erro_detectado = True
+                break
+            time.sleep(0.5)
+            
+        if erro_detectado:
             raise Exception("Erro ao avançar: DDD inválido ou erro no site detectado.")
 
     except Exception as e:
@@ -222,16 +235,23 @@ def test_04_inserir_iccid_e_ativar(browser):
             if visiveis:
                 browser.execute_script("arguments[0].click();", visiveis[-1])
         
-        # Esperar a tela carregar o resultado da ativação (Tempo estendido por segurança)
-        print("⏳ Aguardando processamento da ativação...")
-        time.sleep(15)
-        
-        # VALIDAÇÃO REAL: Lê o texto do site e verifica se deu erro
-        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
-        if "erro" in texto_pagina or "inválido" in texto_pagina or "falha" in texto_pagina or "não encontrado" in texto_pagina:
-            raise Exception("A ativação falhou. Mensagem de erro detectada na tela final do site.")
+        print("⏳ Monitorando ativamente o processamento da ativação...")
+        inicio = time.time()
+        erro_detectado = False
+        sucesso_detectado = False
+        while time.time() - inicio < 20: # Mais tempo para ativação
+            texto_pagina = browser.page_source.lower()
+            if "erro" in texto_pagina or "inválido" in texto_pagina or "falha" in texto_pagina or "não encontrado" in texto_pagina:
+                erro_detectado = True
+                break
+            if "sucesso" in texto_pagina or "concluíd" in texto_pagina or "ativad" in texto_pagina:
+                sucesso_detectado = True
+                break
+            time.sleep(0.5)
             
-        if "sucesso" in texto_pagina or "concluíd" in texto_pagina or "ativad" in texto_pagina:
+        if erro_detectado:
+            raise Exception("A ativação falhou. Mensagem de erro detectada na tela final do site.")
+        elif sucesso_detectado:
             print("✅ Mensagem de sucesso detectada no site!")
 
         # Tirar o print final
