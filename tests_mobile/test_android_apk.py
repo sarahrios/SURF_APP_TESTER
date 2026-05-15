@@ -272,8 +272,15 @@ def test_02_login(driver):
         btn_entrar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Entrar') or @text='ENTRAR' or @content-desc='buttonLoginContinue']")
         btn_entrar.click()
 
-        time.sleep(10) # Aguarda processamento do login
-        print("✅ Login realizado com sucesso.")
+        print("⏳ Aguardando processamento do login e validando o resultado...")
+        time.sleep(8) # Aguarda transição
+        
+        # VALIDAÇÃO REAL: Lê a tela atual e procura por avisos de erro
+        page_source = driver.page_source.lower()
+        if "senha incorreta" in page_source or "inválid" in page_source or "erro" in page_source or "não encontrad" in page_source:
+            raise Exception("O app retornou um erro de login na tela (ex: Senha incorreta ou CPF inválido).")
+
+        print("✅ Login validado com sucesso (sem erros na tela).")
         driver.save_screenshot("storage/test_02_login.png")
     except Exception as e:
         driver.save_screenshot("storage/test_02_login_erro.png")
@@ -318,6 +325,11 @@ def test_04_selecao_numero(driver):
         btn_continuar.click()
         time.sleep(5)
         
+        # VALIDAÇÃO REAL: Verifica se não deu erro na seleção
+        page_source = driver.page_source.lower()
+        if "erro" in page_source or "inválid" in page_source or "falha" in page_source:
+            raise Exception("O app retornou um erro na tela ao tentar vincular o número.")
+
         print("✅ Número vinculado ao usuário.")
         driver.save_screenshot("storage/test_04_selecao_numero.png")
     except Exception as e:
@@ -363,13 +375,23 @@ def test_05_cadastro_cartao(driver):
         btn_add_cartao.click()
         time.sleep(4)
         
+        # VALIDAÇÃO REAL: Verifica erro de cartão de crédito
+        page_source = driver.page_source.lower()
+        if "erro" in page_source or "inválid" in page_source or "falha" in page_source or "recusad" in page_source:
+            raise Exception("O app retornou um erro na tela ao tentar cadastrar o cartão.")
+
         print("✅ Cartão cadastrado com sucesso.")
         driver.save_screenshot("storage/test_05_cadastro_cartao.png")
 
-        # Voltar para a home
-        driver.back()
-        time.sleep(1)
-        driver.back()
+        # Fechar a tela de forma segura (evita o fechamento do app com duplo back)
+        print("Retornando para a tela principal...")
+        try:
+            btn_voltar = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((AppiumBy.XPATH, "//*[@content-desc='Navigate up' or contains(@text, 'Voltar')]"))
+            )
+            btn_voltar.click()
+        except:
+            driver.back() # Apenas 1 back para não matar o app
         time.sleep(2)
     except Exception as e:
         driver.save_screenshot("storage/test_05_cadastro_cartao_erro.png")
@@ -398,11 +420,20 @@ def test_06_consulta_consumo(driver):
         btn_sms.click()
         time.sleep(2)
         
+        # VALIDAÇÃO REAL: Confirma que o app não fechou e que as abas estão na tela
+        page_source = driver.page_source.lower()
+        if "consumo" not in page_source and "sms" not in page_source:
+            raise Exception("O aplicativo fechou inesperadamente após acessar o consumo.")
+
         print("✅ Exibição correta dos dados de consumo.")
         driver.save_screenshot("storage/test_06_consulta_consumo.png")
 
-        # Voltar para a Home
-        driver.back()
+        # Voltar para a Home de forma segura
+        try:
+            btn_voltar = driver.find_element(AppiumBy.XPATH, "//*[@content-desc='Navigate up' or contains(@text, 'Voltar')]")
+            btn_voltar.click()
+        except:
+            driver.back()
         time.sleep(2)
     except Exception as e:
         driver.save_screenshot("storage/test_06_consulta_consumo_erro.png")
@@ -454,6 +485,11 @@ def test_07_recarga_pix(driver):
         btn_finalizar = driver.find_element(AppiumBy.XPATH, "//*[contains(@text, 'Finalizar') or @content-desc='buttonFinalizeRecharge']")
         btn_finalizar.click()
         time.sleep(5)
+
+        # VALIDAÇÃO REAL: Verifica falha ao gerar QRCode
+        page_source = driver.page_source.lower()
+        if "erro" in page_source or "falha" in page_source or "tente novamente" in page_source:
+            raise Exception("O app retornou um erro na tela ao tentar finalizar a recarga PIX.")
 
         # Clicar em "Copiar código"
         btn_copiar = WebDriverWait(driver, 30).until(
@@ -510,11 +546,20 @@ def test_08_atualizacao_perfil(driver):
         btn_salvar.click()
         time.sleep(3)
         
+        # VALIDAÇÃO REAL: Verifica se não deu erro de API ao salvar
+        page_source = driver.page_source.lower()
+        if "erro" in page_source or "falha" in page_source:
+            raise Exception("O app retornou um erro na tela ao tentar salvar as alterações do perfil.")
+
         print("✅ Dados atualizados com sucesso.")
         driver.save_screenshot("storage/test_08_atualizacao_perfil.png")
 
-        # Voltar para a Home
-        driver.back()
+        # Voltar para a Home de forma segura
+        try:
+            btn_voltar = driver.find_element(AppiumBy.XPATH, "//*[@content-desc='Navigate up' or contains(@text, 'Voltar')]")
+            btn_voltar.click()
+        except:
+            driver.back()
         time.sleep(2)
     except Exception as e:
         driver.save_screenshot("storage/test_08_atualizacao_perfil_erro.png")

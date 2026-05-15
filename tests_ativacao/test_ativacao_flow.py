@@ -99,6 +99,11 @@ def test_02_inserir_cpf(browser):
         print("✅ Botão 'Continuar' clicado.")
         time.sleep(4) # Aguarda a próxima tela carregar
         
+        # VALIDAÇÃO REAL: Verifica se o site recusou o CPF
+        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
+        if "erro" in texto_pagina or "inválido" in texto_pagina or "incorreto" in texto_pagina:
+            raise Exception("Erro ao avançar: CPF inválido ou erro no site detectado.")
+
     except Exception as e:
         browser.save_screenshot("storage/test_02_inserir_cpf.png")
         pytest.fail(f"Falha ao inserir CPF: {e}")
@@ -155,6 +160,11 @@ def test_03_inserir_ddd(browser):
             raise Exception("Não foi possível encontrar um botão Continuar visível após preencher o DDD.")
 
         time.sleep(6) # Aguarda a próxima tela carregar (ICCID)
+
+        # VALIDAÇÃO REAL: Verifica se o site recusou o DDD
+        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
+        if "erro" in texto_pagina or "inválido" in texto_pagina or "incorreto" in texto_pagina:
+            raise Exception("Erro ao avançar: DDD inválido ou erro no site detectado.")
 
     except Exception as e:
         browser.save_screenshot("storage/test_03_inserir_ddd.png")
@@ -216,9 +226,17 @@ def test_04_inserir_iccid_e_ativar(browser):
         print("⏳ Aguardando processamento da ativação...")
         time.sleep(15)
         
+        # VALIDAÇÃO REAL: Lê o texto do site e verifica se deu erro
+        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
+        if "erro" in texto_pagina or "inválido" in texto_pagina or "falha" in texto_pagina or "não encontrado" in texto_pagina:
+            raise Exception("A ativação falhou. Mensagem de erro detectada na tela final do site.")
+            
+        if "sucesso" in texto_pagina or "concluíd" in texto_pagina or "ativad" in texto_pagina:
+            print("✅ Mensagem de sucesso detectada no site!")
+
         # Tirar o print final
         browser.save_screenshot("storage/test_04_inserir_iccid_e_ativar.png")
-        print("✅ Processo de ativação concluído e tela final carregada.")
+        print("✅ Processo de ativação concluído e validado.")
 
     except Exception as e:
         browser.save_screenshot("storage/test_04_inserir_iccid_e_ativar.png")

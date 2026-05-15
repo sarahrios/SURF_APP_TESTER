@@ -112,6 +112,11 @@ def test_02_inserir_msisdn_e_ver_planos(browser):
         # Aguarda a próxima tela carregar (Transição)
         time.sleep(5)
         
+        # VALIDAÇÃO REAL: Verifica se o número inserido foi recusado
+        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
+        if "erro" in texto_pagina or "inválido" in texto_pagina or "não encontrado" in texto_pagina:
+            raise Exception("Erro ao buscar planos: MSISDN inválido ou erro no site detectado na tela.")
+
         # 📸 Print do Fim (Este print irá automaticamente para o PDF pois tem o exato nome da função!)
         browser.save_screenshot("storage/test_02_inserir_msisdn_e_ver_planos.png")
         
@@ -153,6 +158,11 @@ def test_03_selecionar_plano_e_pix(browser):
         
         time.sleep(5) # Aguarda transição para tela do QRCode/Pix
         
+        # VALIDAÇÃO REAL: Verifica se falhou após selecionar pagamento
+        texto_pagina = browser.find_element(By.TAG_NAME, "body").text.lower()
+        if "erro" in texto_pagina or "falha" in texto_pagina or "tente novamente" in texto_pagina:
+            raise Exception("Erro na geração do PIX detectado na tela final do site.")
+
         # 📸 Print do Fim (Este print irá automaticamente para o PDF com o nome exato da função)
         browser.save_screenshot("storage/test_03_selecionar_plano_e_pix.png")
         

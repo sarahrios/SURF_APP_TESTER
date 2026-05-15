@@ -277,68 +277,127 @@ class PDFReporter:
         # =================================================================================
         # 5. EVIDÊNCIAS VISUAIS
         # =================================================================================
-        evidencias = []
+        evidencias_sucesso = []
+        evidencias_falha = []
+        
         for teste in resultados.get('lista_testes', []):
             nome_teste = teste.get('name', '')
             desc_teste = teste.get('description', nome_teste)
+            status = teste.get('status', 'APROVADO')
+            msg_erro = teste.get('message', '')
             
             caminho_img = f"storage/{nome_teste}.png"
             caminho_img_erro = f"storage/{nome_teste}_erro.png"
             
+            img_usar = None
             if os.path.exists(caminho_img_erro):
-                evidencias.append((f"❌ FALHA: {desc_teste}", caminho_img_erro))
+                img_usar = caminho_img_erro
             elif os.path.exists(caminho_img):
-                evidencias.append((f"✅ {desc_teste}", caminho_img))
+                img_usar = caminho_img
+                
+            if img_usar:
+                if status == "REPROVADO":
+                    evidencias_falha.append((desc_teste, img_usar, msg_erro))
+                else:
+                    evidencias_sucesso.append((desc_teste, img_usar))
                 
         # Fallback de segurança caso existam imagens antigas
-        if os.path.exists("storage/screenshot_final.png") and not evidencias:
-            evidencias.append(("Estado final da interface", "storage/screenshot_final.png"))
+        if os.path.exists("storage/screenshot_final.png") and not evidencias_sucesso and not evidencias_falha:
+            evidencias_sucesso.append(("Estado final da interface", "storage/screenshot_final.png"))
 
-        if evidencias:
+        if evidencias_falha or evidencias_sucesso:
             story.append(PageBreak())
-            story.append(Paragraph("4. Evidências Visuais", style_h1))
-            story.append(Paragraph("Telas capturadas automaticamente durante a execução do fluxo E2E.", style_normal))
-            story.append(Spacer(1, 10))
+            story.append(Paragraph("4. Evidências Visuais e Troubleshooting", style_h1))
             
-            grid_data = []
-            row = []
-            for desc, img_path in evidencias:
-                try:
-                    is_landscape = False
-                    if PILImage:
-                        with PILImage.open(img_path) as pil_img:
-                            w, h = pil_img.size
-                            is_landscape = w > h
-
-                    if is_landscape:
-                        # Web screenshot: usa a largura toda
-                        img = Image(img_path, width=7.2*inch, height=4.05*inch, kind='proportional')
-                        cell = [img, Spacer(1, 5), Paragraph(f"<b>{escape(desc)}</b>", style_small)]
-                        grid_data.append([cell]) # Uma imagem por linha
-                    else:
-                        # Mobile screenshot: continua com duas colunas
-                        img = Image(img_path, width=3.2*inch, height=5.5*inch, kind='proportional')
-                        cell = [img, Spacer(1, 5), Paragraph(f"<b>{escape(desc)}</b>", style_small)]
-                        row.append(cell)
-                        if len(row) == 2:
-                            grid_data.append(row)
-                            row = []
-                except Exception as e:
-                    print(f"Erro ao processar imagem para PDF: {e}")
-                    pass
-            
-            if row: # Se sobrou uma imagem ímpar
-                row.append("")
-                grid_data.append(row)
+            # Renderizar Falhas Primeiro (Em destaque)
+            if evidencias_falha:
+                story.append(Paragraph("<font color='#dc2626'><b>❌ Falhas Detectadas (Troubleshooting)</b></font>", style_h2))
+                story.append(Paragraph("Abaixo estão as capturas de tela das etapas que falharam, junto com o motivo capturado na tela.", style_normal))
+                story.append(Spacer(1, 10))
                 
-            if grid_data:
-                t_img = Table(grid_data, colWidths=[3.6*inch, 3.6*inch])
-                t_img.setStyle(TableStyle([
-                    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-                    ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                    ('BOTTOMPADDING', (0,0), (-1,-1), 15),
-                ]))
-                story.append(t_img)
+                for desc, img_path, msg_erro in evidencias_falha:
+                    try:
+                        is_landscape = False
+                        if PILImage:
+                            with PILImage.open(img_path) as pil_img:
+                                w, h = pil_img.size
+                                is_landscape = w > h
+
+                        if len(msg_erro) > 300: msg_erro = msg_erro[:300] + "..."
+
+                        bloco_texto = [
+                            Paragraph(f"<b>Etapa:</b> {escape(desc)}", style_normal),
+                            Spacer(1, 5),
+                            Paragraph(f"<b>Erro:</b> <font color='#dc2626'>{escape(msg_erro)}</font>", style_small),
+                            Spacer(1, 10)
+                        ]
+
+                        if is_landscape:
+                            img = Image(img_path, width=7.2*inch, height=4.05*inch, kind='proportional')
+                            bloco_texto.append(img)
+                            t_falha = Table([[bloco_texto]], colWidths=[7.2*inch])
+                        else:
+                            img = Image(img_path, width=2.8*inch, height=5.0*inch, kind='proportional')
+                            t_falha = Table([[bloco_texto, img]], colWidths=[4.4*inch, 2.8*inch])
+                            
+                        t_falha.setStyle(TableStyle([
+                            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                            ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#fef2f2")), 
+                            ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#fca5a5")),
+                            ('PADDING', (0,0), (-1,-1), 10),
+                            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+                        ]))
+                        story.append(KeepTogether(t_falha))
+                        story.append(Spacer(1, 15))
+                    except Exception as e:
+                        print(f"Erro ao processar imagem de erro para PDF: {e}")
+
+            # Renderizar Sucessos
+            if evidencias_sucesso:
+                if evidencias_falha:
+                    story.append(Spacer(1, 20))
+                    
+                story.append(Paragraph("<font color='#16a34a'><b>✅ Etapas Concluídas com Sucesso</b></font>", style_h2))
+                story.append(Paragraph("Telas capturadas automaticamente durante as etapas que passaram sem erros.", style_normal))
+                story.append(Spacer(1, 10))
+                
+                grid_data = []
+                row = []
+                for desc, img_path in evidencias_sucesso:
+                    try:
+                        is_landscape = False
+                        if PILImage:
+                            with PILImage.open(img_path) as pil_img:
+                                w, h = pil_img.size
+                                is_landscape = w > h
+
+                        if is_landscape:
+                            img = Image(img_path, width=7.2*inch, height=4.05*inch, kind='proportional')
+                            cell = [img, Spacer(1, 5), Paragraph(f"<b>✅ {escape(desc)}</b>", style_small)]
+                            grid_data.append([cell])
+                        else:
+                            img = Image(img_path, width=3.2*inch, height=5.5*inch, kind='proportional')
+                            cell = [img, Spacer(1, 5), Paragraph(f"<b>✅ {escape(desc)}</b>", style_small)]
+                            row.append(cell)
+                            if len(row) == 2:
+                                grid_data.append(row)
+                                row = []
+                    except Exception as e:
+                        print(f"Erro ao processar imagem para PDF: {e}")
+                        pass
+            
+                if row:
+                    row.append("")
+                    grid_data.append(row)
+                    
+                if grid_data:
+                    t_img = Table(grid_data, colWidths=[3.6*inch, 3.6*inch])
+                    t_img.setStyle(TableStyle([
+                        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                        ('BOTTOMPADDING', (0,0), (-1,-1), 15),
+                    ]))
+                    story.append(t_img)
 
         doc.build(story)
         return f"/{filename}"
